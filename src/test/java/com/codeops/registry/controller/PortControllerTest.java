@@ -293,13 +293,10 @@ class PortControllerTest {
     }
 
     @Test
-    void getPortsForTeam_missingEnvironment_returns500() throws Exception {
-        // Missing required @RequestParam returns 500 because GlobalExceptionHandler
-        // does not yet handle MissingServletRequestParameterException → catch-all → 500.
-        // Observation logged for architect review.
+    void getPortsForTeam_missingEnvironment_returns400() throws Exception {
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/ports", TEAM_ID)
                         .header("Authorization", "Bearer " + architectToken()))
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isBadRequest());
     }
 
     // ──────────────────────────────────────────────
@@ -336,13 +333,10 @@ class PortControllerTest {
     }
 
     @Test
-    void checkPortAvailability_missingParams_returns500() throws Exception {
-        // Missing required @RequestParam returns 500 because GlobalExceptionHandler
-        // does not yet handle MissingServletRequestParameterException → catch-all → 500.
-        // Observation logged for architect review.
+    void checkPortAvailability_missingParams_returns400() throws Exception {
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/ports/check", TEAM_ID)
                         .header("Authorization", "Bearer " + architectToken()))
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isBadRequest());
     }
 
     @Test

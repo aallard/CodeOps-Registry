@@ -241,14 +241,11 @@ class RouteControllerTest {
     }
 
     @Test
-    void getRoutesForGateway_missingEnvironment_returns500() throws Exception {
-        // Missing required @RequestParam returns 500 because GlobalExceptionHandler
-        // does not yet handle MissingServletRequestParameterException → catch-all → 500.
-        // Observation logged for architect review.
+    void getRoutesForGateway_missingEnvironment_returns400() throws Exception {
         mockMvc.perform(get("/api/v1/registry/services/{gatewayServiceId}/routes/gateway",
                         GATEWAY_SERVICE_ID)
                         .header("Authorization", "Bearer " + architectToken()))
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isBadRequest());
     }
 
     // ──────────────────────────────────────────────

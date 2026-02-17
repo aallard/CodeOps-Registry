@@ -14,6 +14,7 @@ import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 
 import java.lang.reflect.Method;
 import java.util.UUID;
@@ -116,5 +117,16 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<ErrorResponse> response = handler.handleBadRequest(ex);
         assertThat(response.getStatusCode().value()).isEqualTo(400);
         assertThat(response.getBody().message()).isEqualTo("Invalid request");
+    }
+
+    @Test
+    void handleMissingParam_returns400WithParamName() {
+        MissingServletRequestParameterException ex =
+                new MissingServletRequestParameterException("environment", "String");
+        ResponseEntity<ErrorResponse> response = handler.handleMissingParam(ex);
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().status()).isEqualTo(400);
+        assertThat(response.getBody().message()).contains("environment");
     }
 }
