@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    open-in-view: false
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+codeops:
+  jwt:
+    secret: integration-test-secret-key-minimum-32-characters-long
+  cors:
+    allowed-origins: http://localhost:3000
+  services:
+    server-url: http://localhost:8090
+    vault-url: http://localhost:8097
+    logger-url: http://localhost:8098
+
+logging:
+  level:
+    com.codeops.registry: WARN

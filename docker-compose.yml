@@ -1,0 +1,34 @@
+name: codeops-registry
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: codeops-registry-db
+    environment:
+      POSTGRES_DB: codeops_registry
+      POSTGRES_USER: codeops
+      POSTGRES_PASSWORD: codeops
+    ports:
+      - "127.0.0.1:5435:5432"
+    volumes:
+      - codeops-registry-postgres-data:/var/lib/postgresql/data
+    labels:
+      com.codeops.project: "codeops-registry"
+      com.codeops.component: "database"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U codeops -d codeops_registry"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - codeops-registry-network
+
+networks:
+  codeops-registry-network:
+    name: codeops-registry-network
+    driver: bridge
+
+volumes:
+  codeops-registry-postgres-data:
+    name: codeops-registry-postgres-data
