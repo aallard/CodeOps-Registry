@@ -54,4 +54,9 @@ public final class AppConstants {
     public static final int MAX_SOLUTIONS_PER_TEAM = 50;
     public static final int MAX_PORTS_PER_SERVICE = 20;
     public static final int MAX_DEPENDENCIES_PER_SERVICE = 50;
+
+    // Config engine
+    public static final int CONFIG_TEMPLATE_MAX_CONTENT_SIZE = 1_000_000;
+    public static final String DOCKER_COMPOSE_VERSION = "3.8";
+    public static final String DEFAULT_DOCKER_NETWORK = "codeops-network";
 }
