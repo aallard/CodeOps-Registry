@@ -41,4 +41,7 @@ public interface PortAllocationRepository extends JpaRepository<PortAllocation, 
 
     /** Checks if a specific port is already allocated for a service in an environment. */
     boolean existsByServiceIdAndEnvironmentAndPortNumber(UUID serviceId, String environment, Integer portNumber);
+
+    /** Counts all port allocations for a service. */
+    long countByServiceId(UUID serviceId);
 }

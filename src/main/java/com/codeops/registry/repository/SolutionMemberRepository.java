@@ -34,4 +34,7 @@ public interface SolutionMemberRepository extends JpaRepository<SolutionMember, 
 
     /** Count members in a solution. */
     long countBySolutionId(UUID solutionId);
+
+    /** Counts all solution memberships for a service. */
+    long countByServiceId(UUID serviceId);
 }
