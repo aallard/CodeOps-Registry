@@ -3,11 +3,12 @@ package com.codeops.registry.dto.response;
 import java.util.List;
 import java.util.UUID;
 
-/** Full topology for visualization — nodes, edges, and solution groupings. */
+/** Full topology for visualization — nodes, edges, solution groupings, layers, and stats. */
 public record TopologyResponse(
     UUID teamId,
-    String environment,
     List<TopologyNodeResponse> nodes,
-    List<TopologyEdgeResponse> edges,
-    List<TopologySolutionGroupResponse> solutionGroups
+    List<DependencyEdgeResponse> edges,
+    List<TopologySolutionGroup> solutionGroups,
+    List<TopologyLayerResponse> layers,
+    TopologyStatsResponse stats
 ) {}

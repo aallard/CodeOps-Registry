@@ -4,11 +4,10 @@ import com.codeops.registry.entity.enums.HealthStatus;
 import com.codeops.registry.entity.enums.ServiceStatus;
 import com.codeops.registry.entity.enums.ServiceType;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/** A node in the topology representing a service with its ports and solution memberships. */
+/** A node in the topology representing a service with dependency counts and layer classification. */
 public record TopologyNodeResponse(
     UUID serviceId,
     String name,
@@ -16,8 +15,9 @@ public record TopologyNodeResponse(
     ServiceType serviceType,
     ServiceStatus status,
     HealthStatus healthStatus,
-    Instant lastHealthCheckAt,
-    String healthCheckUrl,
-    List<PortAllocationResponse> ports,
-    List<UUID> solutionIds
+    int portCount,
+    int upstreamDependencyCount,
+    int downstreamDependencyCount,
+    List<UUID> solutionIds,
+    String layer
 ) {}

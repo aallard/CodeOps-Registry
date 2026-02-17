@@ -59,4 +59,12 @@ public final class AppConstants {
     public static final int CONFIG_TEMPLATE_MAX_CONTENT_SIZE = 1_000_000;
     public static final String DOCKER_COMPOSE_VERSION = "3.8";
     public static final String DEFAULT_DOCKER_NETWORK = "codeops-network";
+
+    // Topology
+    public static final int TOPOLOGY_MAX_NEIGHBORHOOD_DEPTH = 3;
+    public static final String TOPOLOGY_LAYER_INFRASTRUCTURE = "infrastructure";
+    public static final String TOPOLOGY_LAYER_BACKEND = "backend";
+    public static final String TOPOLOGY_LAYER_FRONTEND = "frontend";
+    public static final String TOPOLOGY_LAYER_GATEWAY = "gateway";
+    public static final String TOPOLOGY_LAYER_STANDALONE = "standalone";
 }
