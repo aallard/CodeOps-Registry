@@ -29,4 +29,8 @@ public interface ApiRouteRegistrationRepository extends JpaRepository<ApiRouteRe
     /** Finds routes whose prefix overlaps with the given prefix (for conflict detection). */
     @Query("SELECT arr FROM ApiRouteRegistration arr WHERE arr.gatewayService.id = :gatewayId AND arr.environment = :environment AND (arr.routePrefix LIKE CONCAT(:prefix, '%') OR :prefix LIKE CONCAT(arr.routePrefix, '%'))")
     List<ApiRouteRegistration> findOverlappingRoutes(@Param("gatewayId") UUID gatewayId, @Param("environment") String environment, @Param("prefix") String prefix);
+
+    /** Finds overlapping direct routes (no gateway) for a team in an environment. */
+    @Query("SELECT arr FROM ApiRouteRegistration arr WHERE arr.gatewayService IS NULL AND arr.service.teamId = :teamId AND arr.environment = :environment AND (arr.routePrefix LIKE CONCAT(:prefix, '%') OR :prefix LIKE CONCAT(arr.routePrefix, '%'))")
+    List<ApiRouteRegistration> findOverlappingDirectRoutes(@Param("teamId") UUID teamId, @Param("environment") String environment, @Param("prefix") String prefix);
 }
