@@ -1,12 +1,12 @@
 # CodeOps-Registry — Codebase Audit
 
-**Audit Date:** 2026-02-17T20:33:53Z
+**Audit Date:** 2026-02-18T01:21:34Z
 **Branch:** main
-**Commit:** b7455933d68ab1870971f5f72540a62471ed226d CR-007: ApiRouteService + InfraResourceService — route collision detection, prefix overlap, orphan finding with ~42 tests
+**Commit:** a87e021a0c711b9cd5f8bd59e1bf929b38eb6ee2 CR-FIX-001: Fix RBAC role ARCHITECT → ADMIN across all controllers and tests; update CodeOps-Server URL from 8090 to 8095
 **Auditor:** Claude Code (Automated)
 **Purpose:** Zero-context reference for AI-assisted development
 **Audit File:** CodeOps-Registry-Audit.md
-**Scorecard:** (Not produced — project is in-development, scoring deferred)
+**Scorecard:** CodeOps-Registry-Scorecard.md
 **OpenAPI Spec:** openapi.yaml
 
 > This audit is the single source of truth for the CodeOps-Registry codebase.
@@ -19,15 +19,15 @@
 ## 1. Project Identity
 
 ```
-Project Name:        CodeOps Registry
-Repository URL:      https://github.com/aallard/CodeOps-Registry.git
-Primary Language:    Java / Spring Boot 3.3.0
-Java Version:        21 (compiles with 21, runs on Java 25 via compatibility overrides)
-Build Tool:          Maven (spring-boot-starter-parent 3.3.0)
-Current Branch:      main
-Latest Commit:       b7455933d68ab1870971f5f72540a62471ed226d
-Latest Commit Msg:   CR-007: ApiRouteService + InfraResourceService — route collision detection, prefix overlap, orphan finding with ~42 tests
-Audit Timestamp:     2026-02-17T20:33:53Z
+Project Name:            CodeOps Registry
+Repository URL:          https://github.com/adamallard/CodeOps-Registry
+Primary Language:        Java 21 (Spring Boot 3.3.0)
+Java Version:            21 (compile target; runtime Java 25)
+Build Tool:              Maven 3.x (Spring Boot parent 3.3.0)
+Current Branch:          main
+Latest Commit Hash:      a87e021a0c711b9cd5f8bd59e1bf929b38eb6ee2
+Latest Commit Message:   CR-FIX-001: Fix RBAC role ARCHITECT → ADMIN across all controllers and tests
+Audit Timestamp:         2026-02-18T01:21:34Z
 ```
 
 ---
@@ -35,70 +35,119 @@ Audit Timestamp:     2026-02-17T20:33:53Z
 ## 2. Directory Structure
 
 ```
-./CONVENTIONS.md
-./docker-compose.yml
-./Dockerfile
-./pom.xml
-./README.md
-./src/main/java/com/codeops/registry/CodeOpsRegistryApplication.java
-./src/main/java/com/codeops/registry/config/AppConstants.java
-./src/main/java/com/codeops/registry/config/AsyncConfig.java
-./src/main/java/com/codeops/registry/config/CorsConfig.java
-./src/main/java/com/codeops/registry/config/GlobalExceptionHandler.java
-./src/main/java/com/codeops/registry/config/HealthController.java
-./src/main/java/com/codeops/registry/config/JwtProperties.java
-./src/main/java/com/codeops/registry/config/LoggingInterceptor.java
-./src/main/java/com/codeops/registry/config/RequestCorrelationFilter.java
-./src/main/java/com/codeops/registry/config/RestTemplateConfig.java
-./src/main/java/com/codeops/registry/config/ServiceUrlProperties.java
-./src/main/java/com/codeops/registry/config/WebMvcConfig.java
-./src/main/java/com/codeops/registry/dto/request/ (19 files)
-./src/main/java/com/codeops/registry/dto/response/ (33 files)
-./src/main/java/com/codeops/registry/entity/ (10 entity files + enums/)
-./src/main/java/com/codeops/registry/entity/enums/ (11 enum files)
-./src/main/java/com/codeops/registry/exception/ (4 exception files)
-./src/main/java/com/codeops/registry/repository/ (11 repository files)
-./src/main/java/com/codeops/registry/security/ (5 security files)
-./src/main/java/com/codeops/registry/service/ (6 service files)
-./src/main/java/com/codeops/registry/util/SlugUtils.java
-./src/main/resources/application.yml
-./src/main/resources/application-dev.yml
-./src/main/resources/application-prod.yml
-./src/main/resources/application-test.yml
-./src/main/resources/application-integration.yml
-./src/main/resources/logback-spring.xml
-./src/test/java/com/codeops/registry/ (12 test files)
+CodeOps-Registry/
+├── CONVENTIONS.md
+├── Dockerfile
+├── docker-compose.yml
+├── pom.xml
+├── README.md
+└── src/
+    ├── main/
+    │   ├── java/com/codeops/registry/
+    │   │   ├── CodeOpsRegistryApplication.java
+    │   │   ├── config/
+    │   │   │   ├── AppConstants.java
+    │   │   │   ├── AsyncConfig.java
+    │   │   │   ├── CorsConfig.java
+    │   │   │   ├── DataSeeder.java
+    │   │   │   ├── GlobalExceptionHandler.java
+    │   │   │   ├── HealthController.java
+    │   │   │   ├── JwtProperties.java
+    │   │   │   ├── LoggingInterceptor.java
+    │   │   │   ├── OpenApiConfig.java
+    │   │   │   ├── RequestCorrelationFilter.java
+    │   │   │   ├── RestTemplateConfig.java
+    │   │   │   ├── ServiceUrlProperties.java
+    │   │   │   └── WebMvcConfig.java
+    │   │   ├── controller/ (10 controllers)
+    │   │   │   ├── ConfigController.java
+    │   │   │   ├── DependencyController.java
+    │   │   │   ├── HealthManagementController.java
+    │   │   │   ├── InfraController.java
+    │   │   │   ├── PortController.java
+    │   │   │   ├── RegistryController.java
+    │   │   │   ├── RouteController.java
+    │   │   │   ├── SolutionController.java
+    │   │   │   ├── TopologyController.java
+    │   │   │   └── WorkstationController.java
+    │   │   ├── dto/
+    │   │   │   ├── request/ (21 request DTOs)
+    │   │   │   └── response/ (28 response DTOs)
+    │   │   ├── entity/ (12 entities)
+    │   │   │   ├── BaseEntity.java
+    │   │   │   ├── ApiRouteRegistration.java
+    │   │   │   ├── ConfigTemplate.java
+    │   │   │   ├── EnvironmentConfig.java
+    │   │   │   ├── InfraResource.java
+    │   │   │   ├── PortAllocation.java
+    │   │   │   ├── PortRange.java
+    │   │   │   ├── ServiceDependency.java
+    │   │   │   ├── ServiceRegistration.java
+    │   │   │   ├── Solution.java
+    │   │   │   ├── SolutionMember.java
+    │   │   │   ├── WorkstationProfile.java
+    │   │   │   └── enums/ (11 enums)
+    │   │   ├── exception/ (4 exception classes)
+    │   │   ├── repository/ (11 repository interfaces)
+    │   │   ├── security/ (5 security classes)
+    │   │   │   ├── JwtAuthFilter.java
+    │   │   │   ├── JwtTokenValidator.java
+    │   │   │   ├── RateLimitFilter.java
+    │   │   │   ├── SecurityConfig.java
+    │   │   │   └── SecurityUtils.java
+    │   │   ├── service/ (10 service classes)
+    │   │   └── util/
+    │   │       └── SlugUtils.java
+    │   └── resources/
+    │       ├── application.yml
+    │       ├── application-dev.yml
+    │       ├── application-prod.yml
+    │       ├── application-test.yml
+    │       ├── application-integration.yml
+    │       └── logback-spring.xml
+    └── test/
+        └── java/com/codeops/registry/
+            ├── CodeOpsRegistryApplicationTest.java
+            ├── config/ (2 test classes)
+            ├── controller/ (10 controller test classes)
+            ├── integration/ (BaseIntegrationTest.java)
+            ├── security/ (2 security test classes)
+            ├── service/ (10 service test classes)
+            └── util/ (SlugUtilsTest.java)
 ```
 
-Single-module Maven project. Source at `src/main/java/com/codeops/registry/`. Standard layered architecture: `config`, `controller`, `dto`, `entity`, `exception`, `repository`, `security`, `service`, `util`. 10 controllers expose 77 secured + 1 public health endpoint.
+Single-module Spring Boot project. Source code in `src/main/java/com/codeops/registry/`, organized by layer: config, controller, dto, entity, exception, repository, security, service, util.
 
 ---
 
 ## 3. Build & Dependency Manifest
 
+**Build file:** `pom.xml` (Spring Boot parent 3.3.0)
+
 | Dependency | Version | Purpose |
 |---|---|---|
-| spring-boot-starter-web | 3.3.0 (parent) | REST API |
+| spring-boot-starter-web | 3.3.0 (parent) | REST API framework |
 | spring-boot-starter-data-jpa | 3.3.0 (parent) | JPA/Hibernate ORM |
-| spring-boot-starter-security | 3.3.0 (parent) | Authentication/Authorization |
+| spring-boot-starter-security | 3.3.0 (parent) | Authentication/authorization |
 | spring-boot-starter-validation | 3.3.0 (parent) | Jakarta Bean Validation |
-| postgresql | (managed) | PostgreSQL JDBC driver |
+| postgresql | runtime (parent-managed) | PostgreSQL JDBC driver |
 | jjwt-api / jjwt-impl / jjwt-jackson | 0.12.6 | JWT token validation |
-| lombok | 1.18.42 | Boilerplate reduction (Java 25 compat) |
+| lombok | 1.18.42 (overridden) | Boilerplate reduction |
 | mapstruct | 1.5.5.Final | DTO mapping (declared, not yet used) |
-| jackson-datatype-jsr310 | (managed) | Java 8+ date/time serialization |
-| springdoc-openapi-starter-webmvc-ui | 2.5.0 | Swagger UI / OpenAPI auto-docs |
-| logstash-logback-encoder | 7.4 | Structured JSON logging (prod) |
-| spring-boot-starter-test | 3.3.0 (parent) | Test framework |
-| spring-security-test | (managed) | Security test utilities |
-| testcontainers postgresql | 1.19.8 | Testcontainers for integration tests |
-| testcontainers junit-jupiter | 1.19.8 | Testcontainers JUnit 5 integration |
-| h2 | (managed) | In-memory DB for unit tests |
-| mockito (overridden) | 5.21.0 | Java 25 mock compatibility |
-| byte-buddy (overridden) | 1.18.4 | Java 25 bytecode compatibility |
+| jackson-datatype-jsr310 | parent-managed | Java 8+ date/time serialization |
+| springdoc-openapi-starter-webmvc-ui | 2.5.0 | OpenAPI/Swagger UI generation |
+| logstash-logback-encoder | 7.4 | JSON structured logging (prod) |
+| spring-boot-starter-test | 3.3.0 (parent) | Test framework (JUnit 5, Mockito) |
+| spring-security-test | parent-managed | Security test utilities |
+| testcontainers-postgresql | 1.19.8 | Integration test containers |
+| testcontainers-junit-jupiter | 1.19.8 | Testcontainers JUnit 5 integration |
+| h2 | parent-managed | In-memory test database |
+| mockito | 5.21.0 (overridden) | Java 25 compatibility |
+| byte-buddy | 1.18.4 (overridden) | Java 25 compatibility |
 
-**Build plugins:** `spring-boot-maven-plugin` (excludes Lombok), `maven-compiler-plugin` (annotationProcessorPaths for Lombok + MapStruct), `maven-surefire-plugin` (--add-opens for Java 25), `jacoco-maven-plugin` 0.8.14 (code coverage).
+**Build plugins:** spring-boot-maven-plugin, maven-compiler-plugin (Lombok + MapStruct processor paths), maven-surefire-plugin (--add-opens for Java 25), jacoco-maven-plugin 0.8.14.
 
+**Build commands:**
 ```
 Build:   mvn clean compile -DskipTests
 Test:    mvn test
@@ -110,21 +159,21 @@ Package: mvn clean package -DskipTests
 
 ## 4. Configuration & Infrastructure Summary
 
-- **`application.yml`** — Default profile: `dev`, server port: `8096`
-- **`application-dev.yml`** — PostgreSQL at `localhost:5435/codeops_registry`, `ddl-auto: update`, SQL logging enabled. JWT shared secret with CodeOps-Server (dev default). CORS: localhost:3000,3200,5173. Service URLs: CodeOps-Server (8095), Vault (8097), Logger (8098).
-- **`application-prod.yml`** — All secrets from env vars. `ddl-auto: validate`. Logging at INFO/WARN.
-- **`application-test.yml`** — H2 in-memory with `MODE=PostgreSQL`, `ddl-auto: create-drop`. Hardcoded test JWT secret.
-- **`application-integration.yml`** — PostgreSQL driver (Testcontainers provides URL), `ddl-auto: create-drop`.
-- **`logback-spring.xml`** — Dev: human-readable console with correlationId/userId MDC. Prod: JSON via LogstashEncoder. Test: WARN-only.
-- **`docker-compose.yml`** — PostgreSQL 16-alpine on `127.0.0.1:5435→5432` (container: `codeops-registry-db`, db: `codeops_registry`). Named volume, healthcheck.
-- **`Dockerfile`** — `eclipse-temurin:21-jre-alpine`, non-root user (`appuser`), exposes 8096.
+- **`application.yml`** — Default profile `dev`, server port `8096`, app name `codeops-registry`.
+- **`application-dev.yml`** — PostgreSQL at `localhost:5435/codeops_registry`, `ddl-auto: update`, show-sql true, JWT secret from `${JWT_SECRET}` with dev default, CORS allows `localhost:3000,3200,5173`, service URLs from env vars with localhost defaults (Server=8095, Vault=8097, Logger=8098), DEBUG logging.
+- **`application-prod.yml`** — All values from env vars (no defaults), `ddl-auto: validate`, show-sql false, INFO logging.
+- **`application-test.yml`** — H2 in-memory (`MODE=PostgreSQL`), `ddl-auto: create-drop`, hardcoded JWT secret, WARN logging.
+- **`application-integration.yml`** — PostgreSQL driver (URL from Testcontainers), `ddl-auto: create-drop`, hardcoded JWT secret, WARN logging.
+- **`logback-spring.xml`** — Dev profile: human-readable console with MDC (correlationId, userId). Prod profile: JSON via LogstashEncoder. Test profile: WARN-only minimal output.
+- **`docker-compose.yml`** — PostgreSQL 16-alpine on `127.0.0.1:5435:5432`, container `codeops-registry-db`, database `codeops_registry`, with healthcheck and named volume.
+- **`Dockerfile`** — `eclipse-temurin:21-jre-alpine`, non-root user `appuser`, exposes 8096.
 
 **Connection map:**
 ```
-Database:        PostgreSQL, localhost:5435, codeops_registry
+Database:        PostgreSQL 16, localhost:5435, database codeops_registry
 Cache:           None
 Message Broker:  None
-External APIs:   CodeOps-Server (8095), CodeOps-Vault (8097), CodeOps-Logger (8098) — URLs configured but not yet called
+External APIs:   CodeOps-Server (http://localhost:8095), CodeOps-Vault (http://localhost:8097), CodeOps-Logger (http://localhost:8098)
 Cloud Services:  None
 ```
 
@@ -134,269 +183,270 @@ Cloud Services:  None
 
 ## 5. Startup & Runtime Behavior
 
-- **Entry point:** `CodeOpsRegistryApplication.main()` — `@SpringBootApplication` with `@EnableConfigurationProperties({JwtProperties.class, ServiceUrlProperties.class})`
-- **@PostConstruct:** `JwtTokenValidator.validateSecret()` — validates JWT secret ≥ 32 chars at startup
-- **Scheduled tasks:** None
-- **Background jobs:** None
-- **Health check:** `GET /api/v1/health` → 200 `{"status": "UP", "service": "codeops-registry", "timestamp": "..."}`
+- **Entry point:** `CodeOpsRegistryApplication.java` — `@SpringBootApplication` + `@EnableConfigurationProperties({JwtProperties.class, ServiceUrlProperties.class})`
+- **Startup initialization:**
+  - `DataSeeder` (`@Profile("dev")`, `@PostConstruct`) — Idempotent seed: 9 services (CodeOps-Server, Analytics, Client, Registry, Vault, Logger, Gateway, Console, CLI), 13 dependencies, 3 solutions (CodeOps Platform, CodeOps Analytics, CodeOps DevTools), with port allocations and ranges.
+  - `PortAllocationService.seedDefaultRanges()` — Called by DataSeeder to populate port ranges per team.
+- **Scheduled tasks:** None.
+- **Health check:** `GET /health` — Custom `HealthController` returning `{"status":"UP","service":"codeops-registry","timestamp":"..."}` (unauthenticated).
 
 ---
 
 ## 6. Entity / Data Model Layer
 
-### === BaseEntity.java (MappedSuperclass) ===
+### BaseEntity.java
 ```
-Primary Key: id: UUID (GenerationType.UUID)
+Table: (mapped superclass — no table)
+Primary Key: UUID id (GenerationType via JPA provider)
+
 Fields:
-  - createdAt: Instant @Column(nullable=false, updatable=false)
+  - id: UUID @Id @GeneratedValue
+  - createdAt: Instant @Column(updatable = false)
   - updatedAt: Instant
-Auditing: @PrePersist sets createdAt+updatedAt, @PreUpdate sets updatedAt
+
+Lifecycle:
+  - @PrePersist onCreate(): sets both timestamps to Instant.now()
+  - @PreUpdate onUpdate(): updates updatedAt to Instant.now()
 ```
 
-### === ServiceRegistration.java ===
+### ServiceRegistration.java
 ```
 Table: service_registrations
-Primary Key: inherited from BaseEntity (UUID)
+Primary Key: UUID id (inherited from BaseEntity)
 
 Fields:
-  - teamId: UUID @Column(nullable=false)
-  - name: String @Column(nullable=false, length=100)
-  - slug: String @Column(nullable=false, length=63)
-  - serviceType: ServiceType @Enumerated(STRING) @Column(nullable=false, length=30)
-  - description: String @Column(columnDefinition="TEXT")
-  - repoUrl: String @Column(length=500)
-  - repoFullName: String @Column(length=200)
-  - defaultBranch: String @Column(length=50) default="main"
-  - techStack: String @Column(length=500)
-  - status: ServiceStatus @Enumerated(STRING) @Column(nullable=false, length=20) default=ACTIVE
-  - healthCheckUrl: String @Column(length=500)
-  - healthCheckIntervalSeconds: Integer default=30
-  - lastHealthStatus: HealthStatus @Enumerated(STRING) @Column(length=20)
+  - teamId: UUID @Column(nullable = false)
+  - name: String @Column(nullable = false, length = 100)
+  - slug: String @Column(nullable = false, length = 63)
+  - serviceType: ServiceType @Enumerated(STRING) @Column(nullable = false, length = 20)
+  - description: String @Column(columnDefinition = "TEXT")
+  - repoUrl: String @Column(length = 500)
+  - repoFullName: String @Column(length = 200)
+  - defaultBranch: String @Column(length = 50, default "main")
+  - techStack: String @Column(length = 500)
+  - status: ServiceStatus @Enumerated(STRING) @Column(nullable = false, length = 20, default ACTIVE)
+  - healthCheckUrl: String @Column(length = 500)
+  - healthCheckIntervalSeconds: Integer @Column(default 30)
+  - lastHealthStatus: HealthStatus @Enumerated(STRING) @Column(length = 20)
   - lastHealthCheckAt: Instant
-  - environmentsJson: String @Column(columnDefinition="TEXT")
-  - metadataJson: String @Column(columnDefinition="TEXT")
-  - createdByUserId: UUID @Column(nullable=false)
+  - environmentsJson: String @Column(columnDefinition = "TEXT")
+  - metadataJson: String @Column(columnDefinition = "TEXT")
+  - createdByUserId: UUID
 
 Relationships:
-  - portAllocations: @OneToMany → PortAllocation (mappedBy="service", cascade=ALL, orphanRemoval=true)
-  - dependenciesAsSource: @OneToMany → ServiceDependency (mappedBy="sourceService")
-  - dependenciesAsTarget: @OneToMany → ServiceDependency (mappedBy="targetService")
-  - routes: @OneToMany → ApiRouteRegistration (mappedBy="service", cascade=ALL, orphanRemoval=true)
-  - solutionMemberships: @OneToMany → SolutionMember (mappedBy="service")
-  - configTemplates: @OneToMany → ConfigTemplate (mappedBy="service", cascade=ALL, orphanRemoval=true)
-  - environmentConfigs: @OneToMany → EnvironmentConfig (mappedBy="service", cascade=ALL, orphanRemoval=true)
+  - portAllocations: @OneToMany → PortAllocation (mappedBy "service", cascade ALL, orphanRemoval)
+  - dependenciesAsSource: @OneToMany → ServiceDependency (mappedBy "sourceService")
+  - dependenciesAsTarget: @OneToMany → ServiceDependency (mappedBy "targetService")
+  - routes: @OneToMany → ApiRouteRegistration (mappedBy "service", cascade ALL, orphanRemoval)
+  - solutionMemberships: @OneToMany → SolutionMember (mappedBy "service")
+  - configTemplates: @OneToMany → ConfigTemplate (mappedBy "service", cascade ALL, orphanRemoval)
+  - environmentConfigs: @OneToMany → EnvironmentConfig (mappedBy "service", cascade ALL, orphanRemoval)
 
-Indexes: idx_sr_team_id (team_id), idx_sr_status (status)
-Unique Constraints: uk_sr_team_slug (team_id, slug)
+Indexes: idx_sr_team_id(team_id), idx_sr_status(status)
+Unique Constraints: uk_sr_team_slug(team_id, slug)
 ```
 
-### === Solution.java ===
+### Solution.java
 ```
 Table: solutions
-Primary Key: inherited from BaseEntity (UUID)
+Primary Key: UUID id (inherited)
 
 Fields:
-  - teamId: UUID @Column(nullable=false)
-  - name: String @Column(nullable=false, length=200)
-  - slug: String @Column(nullable=false, length=63)
-  - description: String @Column(columnDefinition="TEXT")
-  - category: SolutionCategory @Enumerated(STRING) @Column(nullable=false, length=30)
-  - status: SolutionStatus @Enumerated(STRING) @Column(nullable=false, length=20) default=ACTIVE
-  - iconName: String @Column(length=50)
-  - colorHex: String @Column(length=7)
+  - teamId: UUID @Column(nullable = false)
+  - name: String @Column(nullable = false, length = 200)
+  - slug: String @Column(nullable = false, length = 63)
+  - description: String @Column(columnDefinition = "TEXT")
+  - category: SolutionCategory @Enumerated(STRING) @Column(nullable = false, length = 30)
+  - status: SolutionStatus @Enumerated(STRING) @Column(nullable = false, length = 20, default ACTIVE)
+  - iconName: String @Column(length = 50)
+  - colorHex: String @Column(length = 7)
   - ownerUserId: UUID
-  - repositoryUrl: String @Column(length=500)
-  - documentationUrl: String @Column(length=500)
-  - metadataJson: String @Column(columnDefinition="TEXT")
-  - createdByUserId: UUID @Column(nullable=false)
+  - repositoryUrl: String @Column(length = 500)
+  - documentationUrl: String @Column(length = 500)
+  - metadataJson: String @Column(columnDefinition = "TEXT")
+  - createdByUserId: UUID
 
 Relationships:
-  - members: @OneToMany → SolutionMember (mappedBy="solution", cascade=ALL, orphanRemoval=true)
+  - members: @OneToMany → SolutionMember (mappedBy "solution", cascade ALL, orphanRemoval)
 
-Indexes: idx_sol_team_id (team_id)
-Unique Constraints: uk_sol_team_slug (team_id, slug)
+Indexes: idx_sol_team_id(team_id)
+Unique Constraints: uk_sol_team_slug(team_id, slug)
 ```
 
-### === SolutionMember.java ===
+### SolutionMember.java
 ```
 Table: solution_members
-Primary Key: inherited from BaseEntity (UUID)
+Primary Key: UUID id (inherited)
 
 Fields:
-  - solution: Solution @ManyToOne(LAZY) @JoinColumn(nullable=false)
-  - service: ServiceRegistration @ManyToOne(LAZY) @JoinColumn(nullable=false)
-  - role: SolutionMemberRole @Enumerated(STRING) @Column(nullable=false, length=30)
-  - displayOrder: Integer default=0
-  - notes: String @Column(length=500)
+  - solution: Solution @ManyToOne(fetch = LAZY) @JoinColumn(nullable = false)
+  - service: ServiceRegistration @ManyToOne(fetch = LAZY) @JoinColumn(nullable = false)
+  - role: SolutionMemberRole @Enumerated(STRING) @Column(nullable = false, length = 30)
+  - displayOrder: Integer @Column(default 0)
+  - notes: String @Column(length = 500)
 
-Indexes: idx_sm_solution_id (solution_id), idx_sm_service_id (service_id)
-Unique Constraints: uk_sm_solution_service (solution_id, service_id)
+Indexes: idx_sm_solution_id(solution_id), idx_sm_service_id(service_id)
+Unique Constraints: uk_sm_solution_service(solution_id, service_id)
 ```
 
-### === ServiceDependency.java ===
+### ServiceDependency.java
 ```
 Table: service_dependencies
-Primary Key: inherited from BaseEntity (UUID)
+Primary Key: UUID id (inherited)
 
 Fields:
-  - sourceService: ServiceRegistration @ManyToOne(LAZY) @JoinColumn(nullable=false)
-  - targetService: ServiceRegistration @ManyToOne(LAZY) @JoinColumn(nullable=false)
-  - dependencyType: DependencyType @Enumerated(STRING) @Column(nullable=false, length=30)
-  - description: String @Column(length=500)
-  - isRequired: Boolean @Column(nullable=false) default=true
-  - targetEndpoint: String @Column(length=500)
+  - sourceService: ServiceRegistration @ManyToOne(fetch = LAZY) @JoinColumn(nullable = false)
+  - targetService: ServiceRegistration @ManyToOne(fetch = LAZY) @JoinColumn(nullable = false)
+  - dependencyType: DependencyType @Enumerated(STRING) @Column(nullable = false, length = 30)
+  - description: String @Column(length = 500)
+  - isRequired: Boolean @Column(default true)
+  - targetEndpoint: String @Column(length = 500)
 
-Indexes: idx_sd_source_id (source_service_id), idx_sd_target_id (target_service_id)
-Unique Constraints: uk_sd_source_target_type (source_service_id, target_service_id, dependency_type)
+Indexes: idx_sd_source_id(source_service_id), idx_sd_target_id(target_service_id)
+Unique Constraints: uk_sd_source_target_type(source_service_id, target_service_id, dependency_type)
 ```
 
-### === PortAllocation.java ===
+### PortAllocation.java
 ```
 Table: port_allocations
-Primary Key: inherited from BaseEntity (UUID)
+Primary Key: UUID id (inherited)
 
 Fields:
-  - service: ServiceRegistration @ManyToOne(LAZY) @JoinColumn(nullable=false)
-  - environment: String @Column(nullable=false, length=50)
-  - portType: PortType @Enumerated(STRING) @Column(nullable=false, length=30)
-  - portNumber: Integer @Column(nullable=false)
-  - protocol: String @Column(length=10) default="TCP"
-  - description: String @Column(length=200)
-  - isAutoAllocated: Boolean @Column(nullable=false) default=true
-  - allocatedByUserId: UUID @Column(nullable=false)
+  - service: ServiceRegistration @ManyToOne(fetch = LAZY) @JoinColumn(nullable = false)
+  - environment: String @Column(nullable = false, length = 50)
+  - portType: PortType @Enumerated(STRING) @Column(nullable = false)
+  - portNumber: Integer @Column(nullable = false)
+  - protocol: String @Column(length = 10, default "TCP")
+  - description: String @Column(length = 200)
+  - isAutoAllocated: Boolean @Column(default true)
+  - allocatedByUserId: UUID
 
-Indexes: idx_pa_service_id, idx_pa_environment, idx_pa_port_number
-Unique Constraints: uk_pa_service_env_port (service_id, environment, port_number)
+Indexes: idx_pa_service_id(service_id), idx_pa_environment(environment), idx_pa_port_number(port_number)
+Unique Constraints: uk_pa_service_env_port(service_id, environment, port_number)
 ```
 
-### === PortRange.java ===
+### PortRange.java
 ```
 Table: port_ranges
-Primary Key: inherited from BaseEntity (UUID)
+Primary Key: UUID id (inherited)
 
 Fields:
-  - teamId: UUID @Column(nullable=false)
-  - portType: PortType @Enumerated(STRING) @Column(nullable=false, length=30)
-  - rangeStart: Integer @Column(nullable=false)
-  - rangeEnd: Integer @Column(nullable=false)
-  - environment: String @Column(nullable=false, length=50)
-  - description: String @Column(length=200)
+  - teamId: UUID @Column(nullable = false)
+  - portType: PortType @Enumerated(STRING) @Column(nullable = false, length = 30)
+  - rangeStart: Integer @Column(nullable = false)
+  - rangeEnd: Integer @Column(nullable = false)
+  - environment: String @Column(nullable = false, length = 50)
+  - description: String @Column(length = 200)
 
-Indexes: idx_pr_team_id (team_id)
-Unique Constraints: uk_pr_team_type_env (team_id, port_type, environment)
+Indexes: idx_pr_team_id(team_id)
+Unique Constraints: uk_pr_team_type_env(team_id, port_type, environment)
 ```
 
-### === ApiRouteRegistration.java ===
+### ApiRouteRegistration.java
 ```
 Table: api_route_registrations
-Primary Key: inherited from BaseEntity (UUID)
+Primary Key: UUID id (inherited)
 
 Fields:
-  - service: ServiceRegistration @ManyToOne(LAZY) @JoinColumn(nullable=false)
-  - gatewayService: ServiceRegistration @ManyToOne(LAZY) @JoinColumn(nullable)
-  - routePrefix: String @Column(nullable=false, length=200)
-  - httpMethods: String @Column(length=100)
-  - environment: String @Column(nullable=false, length=50)
-  - description: String @Column(length=500)
+  - service: ServiceRegistration @ManyToOne(fetch = LAZY) @JoinColumn(nullable = false)
+  - gatewayService: ServiceRegistration @ManyToOne(fetch = LAZY) @JoinColumn (nullable)
+  - routePrefix: String @Column(nullable = false, length = 200)
+  - httpMethods: String @Column(length = 100)
+  - environment: String @Column(nullable = false, length = 50)
+  - description: String @Column(length = 500)
 
-Indexes: idx_arr_service_id, idx_arr_gateway_id
+Indexes: idx_arr_service_id(service_id), idx_arr_gateway_id(gateway_service_id)
 ```
 
-### === EnvironmentConfig.java ===
-```
-Table: environment_configs
-Primary Key: inherited from BaseEntity (UUID)
-
-Fields:
-  - service: ServiceRegistration @ManyToOne(LAZY) @JoinColumn(nullable=false)
-  - environment: String @Column(nullable=false, length=50)
-  - configKey: String @Column(nullable=false, length=200)
-  - configValue: String @Column(nullable=false, columnDefinition="TEXT")
-  - configSource: ConfigSource @Enumerated(STRING) @Column(nullable=false, length=20)
-  - description: String @Column(length=500)
-
-Indexes: idx_ec_service_id
-Unique Constraints: uk_ec_service_env_key (service_id, environment, config_key)
-```
-
-### === ConfigTemplate.java ===
-```
-Table: config_templates
-Primary Key: inherited from BaseEntity (UUID)
-
-Fields:
-  - service: ServiceRegistration @ManyToOne(LAZY) @JoinColumn(nullable=false)
-  - templateType: ConfigTemplateType @Enumerated(STRING) @Column(nullable=false, length=30)
-  - environment: String @Column(nullable=false, length=50)
-  - contentText: String @Column(nullable=false, columnDefinition="TEXT")
-  - isAutoGenerated: Boolean @Column(nullable=false) default=true
-  - generatedFrom: String @Column(length=200)
-  - version: Integer @Column(nullable=false) default=1
-
-Indexes: idx_ct_service_id
-Unique Constraints: uk_ct_service_type_env (service_id, template_type, environment)
-```
-
-### === WorkstationProfile.java ===
-```
-Table: workstation_profiles
-Primary Key: inherited from BaseEntity (UUID)
-
-Fields:
-  - teamId: UUID @Column(nullable=false)
-  - name: String @Column(nullable=false, length=100)
-  - description: String @Column(columnDefinition="TEXT")
-  - solutionId: UUID (nullable)
-  - servicesJson: String @Column(nullable=false, columnDefinition="TEXT")
-  - startupOrder: String @Column(columnDefinition="TEXT")
-  - createdByUserId: UUID @Column(nullable=false)
-  - isDefault: Boolean @Column(nullable=false) default=false
-
-Indexes: idx_wp_team_id (team_id)
-```
-
-### === InfraResource.java ===
+### InfraResource.java
 ```
 Table: infra_resources
-Primary Key: inherited from BaseEntity (UUID)
+Primary Key: UUID id (inherited)
 
 Fields:
-  - teamId: UUID @Column(nullable=false)
-  - service: ServiceRegistration @ManyToOne(LAZY) @JoinColumn(nullable) — null = shared/orphaned
-  - resourceType: InfraResourceType @Enumerated(STRING) @Column(nullable=false, length=30)
-  - resourceName: String @Column(nullable=false, length=300)
-  - environment: String @Column(nullable=false, length=50)
-  - region: String @Column(length=30)
-  - arnOrUrl: String @Column(length=500)
-  - metadataJson: String @Column(columnDefinition="TEXT")
-  - description: String @Column(length=500)
-  - createdByUserId: UUID @Column(nullable=false)
+  - teamId: UUID @Column(nullable = false)
+  - service: ServiceRegistration @ManyToOne(fetch = LAZY) @JoinColumn (nullable — for team-shared resources)
+  - resourceType: InfraResourceType @Enumerated(STRING) @Column(nullable = false, length = 30)
+  - resourceName: String @Column(nullable = false, length = 300)
+  - environment: String @Column(nullable = false, length = 50)
+  - region: String @Column(length = 30)
+  - arnOrUrl: String @Column(length = 500)
+  - metadataJson: String @Column(columnDefinition = "TEXT")
+  - description: String @Column(length = 500)
+  - createdByUserId: UUID
 
-Indexes: idx_ir_team_id, idx_ir_service_id
-Unique Constraints: uk_ir_team_type_name_env (team_id, resource_type, resource_name, environment)
+Indexes: idx_ir_team_id(team_id), idx_ir_service_id(service_id)
+Unique Constraints: uk_ir_team_type_name_env(team_id, resource_type, resource_name, environment)
+```
+
+### ConfigTemplate.java
+```
+Table: config_templates
+Primary Key: UUID id (inherited)
+
+Fields:
+  - service: ServiceRegistration @ManyToOne(fetch = LAZY) @JoinColumn(nullable = false)
+  - templateType: ConfigTemplateType @Enumerated(STRING) @Column(nullable = false, length = 30)
+  - environment: String @Column(nullable = false, length = 50)
+  - contentText: String @Column(nullable = false, columnDefinition = "TEXT")
+  - isAutoGenerated: Boolean @Column(default true)
+  - generatedFrom: String @Column(length = 200)
+  - version: Integer @Column(default 1)
+
+Indexes: idx_ct_service_id(service_id)
+Unique Constraints: uk_ct_service_type_env(service_id, template_type, environment)
+```
+
+### EnvironmentConfig.java
+```
+Table: environment_configs
+Primary Key: UUID id (inherited)
+
+Fields:
+  - service: ServiceRegistration @ManyToOne(fetch = LAZY) @JoinColumn(nullable = false)
+  - environment: String @Column(nullable = false, length = 50)
+  - configKey: String @Column(nullable = false, length = 200)
+  - configValue: String @Column(nullable = false, columnDefinition = "TEXT")
+  - configSource: ConfigSource @Enumerated(STRING) @Column(length = 20)
+  - description: String @Column(length = 500)
+
+Indexes: idx_ec_service_id(service_id)
+Unique Constraints: uk_ec_service_env_key(service_id, environment, config_key)
+```
+
+### WorkstationProfile.java
+```
+Table: workstation_profiles
+Primary Key: UUID id (inherited)
+
+Fields:
+  - teamId: UUID @Column(nullable = false)
+  - name: String @Column(nullable = false, length = 100)
+  - description: String @Column(columnDefinition = "TEXT")
+  - solutionId: UUID
+  - servicesJson: String @Column(nullable = false, columnDefinition = "TEXT")
+  - startupOrder: String @Column(columnDefinition = "TEXT")
+  - createdByUserId: UUID
+  - isDefault: Boolean @Column(default false)
+
+Indexes: idx_wp_team_id(team_id)
 ```
 
 ### Entity Relationship Summary
-```
-ServiceRegistration --[OneToMany]--> PortAllocation (via service / service_id)
-ServiceRegistration --[OneToMany]--> ServiceDependency (via sourceService / source_service_id)
-ServiceRegistration --[OneToMany]--> ServiceDependency (via targetService / target_service_id)
-ServiceRegistration --[OneToMany]--> ApiRouteRegistration (via service / service_id)
-ServiceRegistration --[OneToMany]--> SolutionMember (via service / service_id)
-ServiceRegistration --[OneToMany]--> ConfigTemplate (via service / service_id)
-ServiceRegistration --[OneToMany]--> EnvironmentConfig (via service / service_id)
-Solution --[OneToMany]--> SolutionMember (via solution / solution_id)
-SolutionMember --[ManyToOne]--> Solution (via solution / solution_id)
-SolutionMember --[ManyToOne]--> ServiceRegistration (via service / service_id)
-ServiceDependency --[ManyToOne]--> ServiceRegistration (source + target)
-PortAllocation --[ManyToOne]--> ServiceRegistration (via service / service_id)
-ApiRouteRegistration --[ManyToOne]--> ServiceRegistration (service + optional gatewayService)
-EnvironmentConfig --[ManyToOne]--> ServiceRegistration (via service / service_id)
-ConfigTemplate --[ManyToOne]--> ServiceRegistration (via service / service_id)
-InfraResource --[ManyToOne]--> ServiceRegistration (via service / service_id, nullable)
 
-PortRange — standalone entity, no FK relationships (team_id is a UUID reference to CodeOps-Server)
-WorkstationProfile — standalone entity, no FK relationships (team_id, solution_id are UUID references)
+```
+ServiceRegistration --[OneToMany]--> PortAllocation (via service_id)
+ServiceRegistration --[OneToMany]--> ServiceDependency (via source_service_id, target_service_id)
+ServiceRegistration --[OneToMany]--> ApiRouteRegistration (via service_id)
+ServiceRegistration --[OneToMany]--> SolutionMember (via service_id)
+ServiceRegistration --[OneToMany]--> ConfigTemplate (via service_id)
+ServiceRegistration --[OneToMany]--> EnvironmentConfig (via service_id)
+ServiceRegistration --[OneToMany]--> InfraResource (via service_id, nullable)
+Solution --[OneToMany]--> SolutionMember (via solution_id)
+SolutionMember --[ManyToOne]--> Solution (via solution_id)
+SolutionMember --[ManyToOne]--> ServiceRegistration (via service_id)
+ServiceDependency --[ManyToOne]--> ServiceRegistration (source, target)
+ApiRouteRegistration --[ManyToOne]--> ServiceRegistration (service, gateway nullable)
 ```
 
 ---
@@ -404,398 +454,453 @@ WorkstationProfile — standalone entity, no FK relationships (team_id, solution
 ## 7. Enum Definitions
 
 ```
-=== ConfigSource.java ===
-Values: AUTO_GENERATED, MANUAL, INHERITED, REGISTRY_DERIVED
-Used By: EnvironmentConfig.configSource
-
-=== ConfigTemplateType.java ===
-Values: DOCKER_COMPOSE, APPLICATION_YML, APPLICATION_PROPERTIES, ENV_FILE, TERRAFORM_MODULE,
-        CLAUDE_CODE_HEADER, CONVENTIONS_MD, NGINX_CONF, GITHUB_ACTIONS, DOCKERFILE, MAKEFILE, README_SECTION
-Used By: ConfigTemplate.templateType
-
-=== DependencyType.java ===
-Values: HTTP_REST, GRPC, KAFKA_TOPIC, DATABASE_SHARED, REDIS_SHARED, LIBRARY, GATEWAY_ROUTE,
-        WEBSOCKET, FILE_SYSTEM, OTHER
-Used By: ServiceDependency.dependencyType
-
-=== HealthStatus.java ===
-Values: UP, DOWN, DEGRADED, UNKNOWN
-Used By: ServiceRegistration.lastHealthStatus
-
-=== InfraResourceType.java ===
-Values: S3_BUCKET, SQS_QUEUE, SNS_TOPIC, CLOUDWATCH_LOG_GROUP, IAM_ROLE, SECRETS_MANAGER_PATH,
-        SSM_PARAMETER, RDS_INSTANCE, ELASTICACHE_CLUSTER, ECR_REPOSITORY, CLOUD_MAP_NAMESPACE,
-        ROUTE53_RECORD, ACM_CERTIFICATE, ALB_TARGET_GROUP, ECS_SERVICE, LAMBDA_FUNCTION,
-        DYNAMODB_TABLE, DOCKER_NETWORK, DOCKER_VOLUME, OTHER
-Used By: InfraResource.resourceType
-
-=== PortType.java ===
-Values: HTTP_API, FRONTEND_DEV, DATABASE, REDIS, KAFKA, KAFKA_INTERNAL, ZOOKEEPER,
-        GRPC, WEBSOCKET, DEBUG, ACTUATOR, CUSTOM
-Used By: PortAllocation.portType, PortRange.portType
+=== ServiceType.java ===
+Values: SPRING_BOOT_API, FLUTTER_WEB, FLUTTER_DESKTOP, FLUTTER_MOBILE, REACT_SPA, VUE_SPA, NEXT_JS, EXPRESS_API, FASTAPI, DOTNET_API, GO_API, LIBRARY, WORKER, GATEWAY, DATABASE_SERVICE, MESSAGE_BROKER, CACHE_SERVICE, MCP_SERVER, CLI_TOOL, OTHER
+Used By: ServiceRegistration.serviceType
 
 === ServiceStatus.java ===
 Values: ACTIVE, INACTIVE, DEPRECATED, ARCHIVED
 Used By: ServiceRegistration.status
 
-=== ServiceType.java ===
-Values: SPRING_BOOT_API, FLUTTER_WEB, FLUTTER_DESKTOP, FLUTTER_MOBILE, REACT_SPA, VUE_SPA,
-        NEXT_JS, EXPRESS_API, FASTAPI, DOTNET_API, GO_API, LIBRARY, WORKER, GATEWAY,
-        DATABASE_SERVICE, MESSAGE_BROKER, CACHE_SERVICE, MCP_SERVER, CLI_TOOL, OTHER
-Used By: ServiceRegistration.serviceType
+=== HealthStatus.java ===
+Values: UP, DOWN, DEGRADED, UNKNOWN
+Used By: ServiceRegistration.lastHealthStatus
+
+=== DependencyType.java ===
+Values: HTTP_REST, GRPC, KAFKA_TOPIC, DATABASE_SHARED, REDIS_SHARED, LIBRARY, GATEWAY_ROUTE, WEBSOCKET, FILE_SYSTEM, OTHER
+Used By: ServiceDependency.dependencyType
+
+=== PortType.java ===
+Values: HTTP_API, FRONTEND_DEV, DATABASE, REDIS, KAFKA, KAFKA_INTERNAL, ZOOKEEPER, GRPC, WEBSOCKET, DEBUG, ACTUATOR, CUSTOM
+Used By: PortAllocation.portType, PortRange.portType
 
 === SolutionCategory.java ===
 Values: PLATFORM, APPLICATION, LIBRARY_SUITE, INFRASTRUCTURE, TOOLING, OTHER
 Used By: Solution.category
 
+=== SolutionStatus.java ===
+Values: ACTIVE, IN_DEVELOPMENT, DEPRECATED, ARCHIVED
+Used By: Solution.status
+
 === SolutionMemberRole.java ===
 Values: CORE, SUPPORTING, INFRASTRUCTURE, EXTERNAL_DEPENDENCY
 Used By: SolutionMember.role
 
-=== SolutionStatus.java ===
-Values: ACTIVE, IN_DEVELOPMENT, DEPRECATED, ARCHIVED
-Used By: Solution.status
+=== InfraResourceType.java ===
+Values: S3_BUCKET, SQS_QUEUE, SNS_TOPIC, CLOUDWATCH_LOG_GROUP, IAM_ROLE, SECRETS_MANAGER_PATH, SSM_PARAMETER, RDS_INSTANCE, ELASTICACHE_CLUSTER, ECR_REPOSITORY, CLOUD_MAP_NAMESPACE, ROUTE53_RECORD, ACM_CERTIFICATE, ALB_TARGET_GROUP, ECS_SERVICE, LAMBDA_FUNCTION, DYNAMODB_TABLE, DOCKER_NETWORK, DOCKER_VOLUME, OTHER
+Used By: InfraResource.resourceType
+
+=== ConfigTemplateType.java ===
+Values: DOCKER_COMPOSE, APPLICATION_YML, APPLICATION_PROPERTIES, ENV_FILE, TERRAFORM_MODULE, CLAUDE_CODE_HEADER, CONVENTIONS_MD, NGINX_CONF, GITHUB_ACTIONS, DOCKERFILE, MAKEFILE, README_SECTION
+Used By: ConfigTemplate.templateType
+
+=== ConfigSource.java ===
+Values: AUTO_GENERATED, MANUAL, INHERITED, REGISTRY_DERIVED
+Used By: EnvironmentConfig.configSource
 ```
 
 ---
 
 ## 8. Repository Layer
 
+### ServiceRegistrationRepository.java
 ```
-=== ServiceRegistrationRepository.java ===
 Extends: JpaRepository<ServiceRegistration, UUID>
-Custom Methods:
-  - Optional<ServiceRegistration> findByTeamIdAndSlug(UUID, String)
-  - List<ServiceRegistration> findByTeamId(UUID)
-  - Page<ServiceRegistration> findByTeamId(UUID, Pageable)
-  - Page<ServiceRegistration> findByTeamIdAndStatus(UUID, ServiceStatus, Pageable)
-  - Page<ServiceRegistration> findByTeamIdAndServiceType(UUID, ServiceType, Pageable)
-  - Page<ServiceRegistration> findByTeamIdAndStatusAndServiceType(UUID, ServiceStatus, ServiceType, Pageable)
-  - List<ServiceRegistration> findByTeamIdAndStatus(UUID, ServiceStatus)
-  - List<ServiceRegistration> findByTeamIdAndIdIn(UUID, List<UUID>)
-  - Page<ServiceRegistration> findByTeamIdAndNameContainingIgnoreCase(UUID, String, Pageable)
-  - long countByTeamId(UUID)
-  - long countByTeamIdAndStatus(UUID, ServiceStatus)
-  - boolean existsByTeamIdAndSlug(UUID, String)
 
-=== SolutionRepository.java ===
+Custom Methods:
+  - Optional<ServiceRegistration> findByTeamIdAndSlug(UUID teamId, String slug)
+  - List<ServiceRegistration> findByTeamId(UUID teamId)
+  - Page<ServiceRegistration> findByTeamId(UUID teamId, Pageable pageable)
+  - List<ServiceRegistration> findByTeamIdAndStatus(UUID teamId, ServiceStatus status)
+  - Page<ServiceRegistration> findByTeamIdAndStatus(UUID teamId, ServiceStatus status, Pageable pageable)
+  - Page<ServiceRegistration> findByTeamIdAndServiceType(UUID teamId, ServiceType type, Pageable pageable)
+  - Page<ServiceRegistration> findByTeamIdAndStatusAndServiceType(UUID teamId, ServiceStatus status, ServiceType type, Pageable pageable)
+  - List<ServiceRegistration> findByTeamIdAndIdIn(UUID teamId, List<UUID> ids)
+  - Page<ServiceRegistration> findByTeamIdAndNameContainingIgnoreCase(UUID teamId, String name, Pageable pageable)
+  - long countByTeamId(UUID teamId)
+  - long countByTeamIdAndStatus(UUID teamId, ServiceStatus status)
+  - boolean existsByTeamIdAndSlug(UUID teamId, String slug)
+```
+
+### SolutionRepository.java
+```
 Extends: JpaRepository<Solution, UUID>
-Custom Methods:
-  - Optional<Solution> findByTeamIdAndSlug(UUID, String)
-  - List<Solution> findByTeamId(UUID)
-  - Page<Solution> findByTeamId(UUID, Pageable)
-  - Page<Solution> findByTeamIdAndStatus(UUID, SolutionStatus, Pageable)
-  - Page<Solution> findByTeamIdAndCategory(UUID, SolutionCategory, Pageable)
-  - long countByTeamId(UUID)
-  - boolean existsByTeamIdAndSlug(UUID, String)
 
-=== SolutionMemberRepository.java ===
+Custom Methods:
+  - Optional<Solution> findByTeamIdAndSlug(UUID teamId, String slug)
+  - List<Solution> findByTeamId(UUID teamId)
+  - Page<Solution> findByTeamId(UUID teamId, Pageable pageable)
+  - Page<Solution> findByTeamIdAndStatus(UUID teamId, SolutionStatus status, Pageable pageable)
+  - Page<Solution> findByTeamIdAndCategory(UUID teamId, SolutionCategory category, Pageable pageable)
+  - long countByTeamId(UUID teamId)
+  - boolean existsByTeamIdAndSlug(UUID teamId, String slug)
+```
+
+### SolutionMemberRepository.java
+```
 Extends: JpaRepository<SolutionMember, UUID>
-Custom Methods:
-  - List<SolutionMember> findBySolutionId(UUID)
-  - List<SolutionMember> findBySolutionIdOrderByDisplayOrderAsc(UUID)
-  - List<SolutionMember> findByServiceId(UUID)
-  - Optional<SolutionMember> findBySolutionIdAndServiceId(UUID, UUID)
-  - boolean existsBySolutionIdAndServiceId(UUID, UUID)
-  - void deleteBySolutionIdAndServiceId(UUID, UUID)
-  - long countBySolutionId(UUID)
-  - long countByServiceId(UUID)
 
-=== ServiceDependencyRepository.java ===
+Custom Methods:
+  - List<SolutionMember> findBySolutionId(UUID solutionId)
+  - List<SolutionMember> findBySolutionIdOrderByDisplayOrderAsc(UUID solutionId)
+  - List<SolutionMember> findByServiceId(UUID serviceId)
+  - Optional<SolutionMember> findBySolutionIdAndServiceId(UUID solutionId, UUID serviceId)
+  - boolean existsBySolutionIdAndServiceId(UUID solutionId, UUID serviceId)
+  - void deleteBySolutionIdAndServiceId(UUID solutionId, UUID serviceId)
+  - long countBySolutionId(UUID solutionId)
+  - long countByServiceId(UUID serviceId)
+```
+
+### ServiceDependencyRepository.java
+```
 Extends: JpaRepository<ServiceDependency, UUID>
-Custom Methods:
-  - List<ServiceDependency> findBySourceServiceId(UUID)
-  - List<ServiceDependency> findByTargetServiceId(UUID)
-  - Optional<ServiceDependency> findBySourceServiceIdAndTargetServiceIdAndDependencyType(UUID, UUID, DependencyType)
-  - boolean existsBySourceServiceIdAndTargetServiceId(UUID, UUID)
-  - @Query List<ServiceDependency> findAllByTeamId(UUID) — joins via sourceService.teamId
-  - long countBySourceServiceId(UUID)
-  - long countByTargetServiceId(UUID)
 
-=== PortAllocationRepository.java ===
+Custom Methods:
+  - List<ServiceDependency> findBySourceServiceId(UUID sourceId)
+  - List<ServiceDependency> findByTargetServiceId(UUID targetId)
+  - Optional<ServiceDependency> findBySourceServiceIdAndTargetServiceIdAndDependencyType(UUID sourceId, UUID targetId, DependencyType type)
+  - boolean existsBySourceServiceIdAndTargetServiceId(UUID sourceId, UUID targetId)
+  - @Query List<ServiceDependency> findAllByTeamId(@Param UUID teamId) — joins sourceService.teamId
+  - long countBySourceServiceId(UUID sourceId)
+  - long countByTargetServiceId(UUID targetId)
+```
+
+### PortAllocationRepository.java
+```
 Extends: JpaRepository<PortAllocation, UUID>
-Custom Methods:
-  - List<PortAllocation> findByServiceId(UUID)
-  - List<PortAllocation> findByServiceIdAndEnvironment(UUID, String)
-  - @Query List<PortAllocation> findByTeamIdAndEnvironment(UUID, String) — joins via service.teamId
-  - @Query Optional<PortAllocation> findByTeamIdAndEnvironmentAndPortNumber(UUID, String, Integer)
-  - @Query List<PortAllocation> findByTeamIdAndEnvironmentAndPortType(UUID, String, PortType)
-  - @Query List<Object[]> findConflictingPorts(UUID) — GROUP BY port+env HAVING COUNT > 1
-  - boolean existsByServiceIdAndEnvironmentAndPortNumber(UUID, String, Integer)
-  - long countByServiceId(UUID)
 
-=== PortRangeRepository.java ===
+Custom Methods:
+  - List<PortAllocation> findByServiceId(UUID serviceId)
+  - List<PortAllocation> findByServiceIdAndEnvironment(UUID serviceId, String env)
+  - @Query List<PortAllocation> findByTeamIdAndEnvironment(@Param UUID teamId, @Param String env)
+  - @Query Optional<PortAllocation> findByTeamIdAndEnvironmentAndPortNumber(@Param UUID teamId, @Param String env, @Param int portNumber)
+  - @Query List<PortAllocation> findByTeamIdAndEnvironmentAndPortType(@Param UUID teamId, @Param String env, @Param PortType type) — ordered by portNumber ASC
+  - @Query List<Object[]> findConflictingPorts(@Param UUID teamId) — GROUP BY having COUNT > 1
+  - boolean existsByServiceIdAndEnvironmentAndPortNumber(UUID serviceId, String env, int port)
+  - long countByServiceId(UUID serviceId)
+```
+
+### PortRangeRepository.java
+```
 Extends: JpaRepository<PortRange, UUID>
-Custom Methods:
-  - List<PortRange> findByTeamId(UUID)
-  - List<PortRange> findByTeamIdAndEnvironment(UUID, String)
-  - Optional<PortRange> findByTeamIdAndPortTypeAndEnvironment(UUID, PortType, String)
-  - boolean existsByTeamId(UUID)
 
-=== ApiRouteRegistrationRepository.java ===
+Custom Methods:
+  - List<PortRange> findByTeamId(UUID teamId)
+  - List<PortRange> findByTeamIdAndEnvironment(UUID teamId, String env)
+  - Optional<PortRange> findByTeamIdAndPortTypeAndEnvironment(UUID teamId, PortType type, String env)
+  - boolean existsByTeamId(UUID teamId)
+```
+
+### ApiRouteRegistrationRepository.java
+```
 Extends: JpaRepository<ApiRouteRegistration, UUID>
-Custom Methods:
-  - List<ApiRouteRegistration> findByServiceId(UUID)
-  - List<ApiRouteRegistration> findByGatewayServiceIdAndEnvironment(UUID, String)
-  - @Query Optional<ApiRouteRegistration> findByGatewayAndPrefixAndEnvironment(UUID, String, String)
-  - @Query List<ApiRouteRegistration> findOverlappingRoutes(UUID, String, String) — LIKE-based prefix overlap
-  - @Query List<ApiRouteRegistration> findOverlappingDirectRoutes(UUID, String, String) — no gateway, team-scoped
 
-=== EnvironmentConfigRepository.java ===
-Extends: JpaRepository<EnvironmentConfig, UUID>
 Custom Methods:
-  - List<EnvironmentConfig> findByServiceIdAndEnvironment(UUID, String)
-  - Optional<EnvironmentConfig> findByServiceIdAndEnvironmentAndConfigKey(UUID, String, String)
-  - List<EnvironmentConfig> findByServiceId(UUID)
-  - void deleteByServiceIdAndEnvironmentAndConfigKey(UUID, String, String)
+  - List<ApiRouteRegistration> findByServiceId(UUID serviceId)
+  - List<ApiRouteRegistration> findByGatewayServiceIdAndEnvironment(UUID gatewayId, String env)
+  - @Query Optional<ApiRouteRegistration> findByGatewayAndPrefixAndEnvironment(@Param UUID gatewayId, @Param String env, @Param String prefix)
+  - @Query List<ApiRouteRegistration> findOverlappingRoutes(@Param UUID gatewayId, @Param String env, @Param String prefix) — LIKE CONCAT for hierarchical overlap
+  - @Query List<ApiRouteRegistration> findOverlappingDirectRoutes(@Param UUID teamId, @Param String env, @Param String prefix) — no gateway, LIKE CONCAT
+```
 
-=== ConfigTemplateRepository.java ===
-Extends: JpaRepository<ConfigTemplate, UUID>
-Custom Methods:
-  - List<ConfigTemplate> findByServiceId(UUID)
-  - List<ConfigTemplate> findByServiceIdAndEnvironment(UUID, String)
-  - List<ConfigTemplate> findByServiceIdAndTemplateType(UUID, ConfigTemplateType)
-  - Optional<ConfigTemplate> findByServiceIdAndTemplateTypeAndEnvironment(UUID, ConfigTemplateType, String)
-
-=== InfraResourceRepository.java ===
+### InfraResourceRepository.java
+```
 Extends: JpaRepository<InfraResource, UUID>
-Custom Methods:
-  - List<InfraResource> findByTeamId(UUID)
-  - Page<InfraResource> findByTeamId(UUID, Pageable)
-  - Page<InfraResource> findByTeamIdAndResourceType(UUID, InfraResourceType, Pageable)
-  - Page<InfraResource> findByTeamIdAndEnvironment(UUID, String, Pageable)
-  - Page<InfraResource> findByTeamIdAndResourceTypeAndEnvironment(UUID, InfraResourceType, String, Pageable)
-  - List<InfraResource> findByServiceId(UUID)
-  - Optional<InfraResource> findByTeamIdAndResourceTypeAndResourceNameAndEnvironment(UUID, InfraResourceType, String, String)
-  - @Query List<InfraResource> findOrphansByTeamId(UUID) — WHERE service IS NULL
 
-=== WorkstationProfileRepository.java ===
-Extends: JpaRepository<WorkstationProfile, UUID>
 Custom Methods:
-  - List<WorkstationProfile> findByTeamId(UUID)
-  - Optional<WorkstationProfile> findByTeamIdAndIsDefaultTrue(UUID)
-  - Optional<WorkstationProfile> findByTeamIdAndName(UUID, String)
-  - long countByTeamId(UUID)
+  - List<InfraResource> findByTeamId(UUID teamId)
+  - Page<InfraResource> findByTeamId(UUID teamId, Pageable pageable)
+  - Page<InfraResource> findByTeamIdAndResourceType(UUID teamId, InfraResourceType type, Pageable pageable)
+  - Page<InfraResource> findByTeamIdAndEnvironment(UUID teamId, String env, Pageable pageable)
+  - Page<InfraResource> findByTeamIdAndResourceTypeAndEnvironment(UUID teamId, InfraResourceType type, String env, Pageable pageable)
+  - List<InfraResource> findByServiceId(UUID serviceId)
+  - Optional<InfraResource> findByTeamIdAndResourceTypeAndResourceNameAndEnvironment(UUID teamId, InfraResourceType type, String name, String env)
+  - @Query List<InfraResource> findOrphansByTeamId(@Param UUID teamId) — WHERE service IS NULL
+```
+
+### ConfigTemplateRepository.java
+```
+Extends: JpaRepository<ConfigTemplate, UUID>
+
+Custom Methods:
+  - List<ConfigTemplate> findByServiceId(UUID serviceId)
+  - List<ConfigTemplate> findByServiceIdAndEnvironment(UUID serviceId, String env)
+  - List<ConfigTemplate> findByServiceIdAndTemplateType(UUID serviceId, ConfigTemplateType type)
+  - Optional<ConfigTemplate> findByServiceIdAndTemplateTypeAndEnvironment(UUID serviceId, ConfigTemplateType type, String env)
+```
+
+### EnvironmentConfigRepository.java
+```
+Extends: JpaRepository<EnvironmentConfig, UUID>
+
+Custom Methods:
+  - List<EnvironmentConfig> findByServiceIdAndEnvironment(UUID serviceId, String env)
+  - Optional<EnvironmentConfig> findByServiceIdAndEnvironmentAndConfigKey(UUID serviceId, String env, String key)
+  - List<EnvironmentConfig> findByServiceId(UUID serviceId)
+  - void deleteByServiceIdAndEnvironmentAndConfigKey(UUID serviceId, String env, String key)
+```
+
+### WorkstationProfileRepository.java
+```
+Extends: JpaRepository<WorkstationProfile, UUID>
+
+Custom Methods:
+  - List<WorkstationProfile> findByTeamId(UUID teamId)
+  - Optional<WorkstationProfile> findByTeamIdAndIsDefaultTrue(UUID teamId)
+  - Optional<WorkstationProfile> findByTeamIdAndName(UUID teamId, String name)
+  - long countByTeamId(UUID teamId)
 ```
 
 ---
 
 ## 9. Service Layer
 
+### ServiceRegistryService.java (495 lines)
 ```
-=== ServiceRegistryService.java ===
-Injected Dependencies: ServiceRegistrationRepository, PortAllocationRepository,
-    ServiceDependencyRepository, SolutionMemberRepository, ApiRouteRegistrationRepository,
-    InfraResourceRepository, EnvironmentConfigRepository, PortAllocationService, RestTemplate
+Injected Dependencies: ServiceRegistrationRepository, PortAllocationRepository, ServiceDependencyRepository, ApiRouteRegistrationRepository, InfraResourceRepository, SolutionMemberRepository, ConfigTemplateRepository, EnvironmentConfigRepository, PortAllocationService, RestTemplate
 
 Methods:
-  ─── createService(CreateServiceRequest, UUID) → ServiceRegistrationResponse
-      Purpose: Register a new service for a team with auto-slug and optional port auto-allocation
-      Authorization: NONE (caller passes currentUserId)
-      Logic: Check team service limit (200) → generate/validate slug → make unique → build entity → save → optionally auto-allocate ports
-      Throws: ValidationException (limit, slug)
+  ─── registerService(CreateServiceRequest, UUID teamId, UUID userId) → ServiceRegistrationResponse
+      Purpose: Creates new service with slug generation and auto-port allocation
+      Authorization: None (controller-level)
+      Logic: 1. Generate slug via SlugUtils 2. Make unique 3. Build entity 4. Save 5. Auto-allocate HTTP_API port
+      Throws: None (slug validation in SlugUtils)
 
-  ─── getService(UUID) → ServiceRegistrationResponse
-      Purpose: Get a single service by ID with derived counts
-      Throws: NotFoundException
+  ─── getServiceById(UUID serviceId) → ServiceRegistrationResponse
+      Purpose: Retrieves service by ID
+      Logic: Find or throw NotFoundException
 
   ─── getServiceBySlug(UUID teamId, String slug) → ServiceRegistrationResponse
-      Purpose: Get a service by team+slug
-      Throws: NotFoundException
+      Purpose: Retrieves service by team + slug
+      Logic: Find or throw NotFoundException
 
-  ─── getServicesForTeam(UUID, ServiceStatus, ServiceType, String search, Pageable) → PageResponse<ServiceRegistrationResponse>
-      Purpose: Paginated listing with optional status/type/search filters
-      Logic: Derived counts set to 0 on list views (N+1 avoidance)
+  ─── getServicesForTeam(UUID teamId, ServiceStatus status, ServiceType type, Pageable) → PageResponse<ServiceRegistrationResponse>
+      Purpose: Lists services with optional filtering
+      Logic: Branch on filter combinations → paginated query
       Paginated: Yes
 
-  ─── updateService(UUID, UpdateServiceRequest) → ServiceRegistrationResponse
-      Purpose: Partial update of non-null fields
-      Throws: NotFoundException
+  ─── searchServices(UUID teamId, String query, Pageable) → PageResponse<ServiceRegistrationResponse>
+      Purpose: Name search (case-insensitive)
+      Paginated: Yes
 
-  ─── updateServiceStatus(UUID, ServiceStatus) → ServiceRegistrationResponse
-      Purpose: Change service lifecycle status
-      Throws: NotFoundException
+  ─── updateService(UUID serviceId, UpdateServiceRequest) → ServiceRegistrationResponse
+      Purpose: Partial update — applies non-null fields
+      Logic: Fetch, apply updates, save
 
-  ─── deleteService(UUID) → void
-      Purpose: Delete service after checking for active solution memberships and required dependents
-      Throws: NotFoundException, ValidationException (has members, has required dependents)
+  ─── updateServiceStatus(UUID serviceId, UpdateServiceStatusRequest) → ServiceRegistrationResponse
+      Purpose: Updates only the status field
 
-  ─── cloneService(UUID, CloneServiceRequest, UUID) → ServiceRegistrationResponse
-      Purpose: Clone service with new name/slug, auto-allocate ports anew
-      Throws: NotFoundException
+  ─── deleteService(UUID serviceId) → void
+      Purpose: Deletes service and all cascading entities
+      Logic: Remove solution memberships, dependencies (source+target), then delete
 
-  ─── getServiceIdentity(UUID, String environment) → ServiceIdentityResponse
-      Purpose: Complete identity assembly (service + ports + deps + routes + infra + configs)
-      Throws: NotFoundException
+  ─── getServiceIdentity(UUID serviceId) → ServiceIdentityResponse
+      Purpose: Assembles full identity: ports, deps, routes, infra, config keys
 
-  ─── checkHealth(UUID) → ServiceHealthResponse
-      Purpose: Live health check via RestTemplate GET to healthCheckUrl
-      Logic: Updates entity lastHealthStatus/lastHealthCheckAt. Returns UP/DEGRADED/DOWN/UNKNOWN.
-      Throws: NotFoundException
+  ─── cloneService(UUID sourceServiceId, CloneServiceRequest, UUID teamId, UUID userId) → ServiceRegistrationResponse
+      Purpose: Deep copies service with new name/slug, including ports, routes, infra, env configs
+
+  ─── checkHealth(UUID serviceId) → ServiceHealthResponse
+      Purpose: Executes HTTP GET to service's healthCheckUrl, updates entity
+      Logic: RestTemplate.getForEntity → update lastHealthStatus/lastHealthCheckAt
 
   ─── checkAllHealth(UUID teamId) → List<ServiceHealthResponse>
-      Purpose: Parallel health check of all ACTIVE services for a team via CompletableFuture
+      Purpose: Checks all active services with health URLs
 
-=== SolutionService.java ===
+  ─── getServiceCount(UUID teamId) → long
+      Purpose: Team service count
+
+  ─── getActiveServiceCount(UUID teamId) → long
+      Purpose: Active service count
+```
+
+### SolutionService.java (367 lines)
+```
 Injected Dependencies: SolutionRepository, SolutionMemberRepository, ServiceRegistrationRepository
 
 Methods:
-  ─── createSolution(CreateSolutionRequest, UUID) → SolutionResponse
-      Purpose: Create a new solution with auto-slug. Limit: 50 per team.
-      Throws: ValidationException (limit, slug)
+  ─── createSolution(CreateSolutionRequest, UUID teamId, UUID userId) → SolutionResponse
+      Purpose: Creates solution with slug generation
+      Logic: Generate slug → make unique → build entity → save
 
-  ─── getSolution(UUID) → SolutionResponse
-      Throws: NotFoundException
-
-  ─── getSolutionBySlug(UUID, String) → SolutionResponse
-      Throws: NotFoundException
-
-  ─── getSolutionDetail(UUID) → SolutionDetailResponse
-      Purpose: Full detail with ordered member list
-      Throws: NotFoundException
-
+  ─── getSolutionById(UUID) → SolutionResponse
+  ─── getSolutionBySlug(UUID teamId, String slug) → SolutionResponse
+  ─── getSolutionDetail(UUID) → SolutionDetailResponse (includes ordered members)
   ─── getSolutionsForTeam(UUID, SolutionStatus, SolutionCategory, Pageable) → PageResponse<SolutionResponse>
-      Paginated: Yes
-
   ─── updateSolution(UUID, UpdateSolutionRequest) → SolutionResponse
-      Purpose: Partial update of non-null fields
-      Throws: NotFoundException
-
-  ─── deleteSolution(UUID) → void
-      Purpose: Delete solution (members cascade via orphanRemoval)
-      Throws: NotFoundException
+  ─── deleteSolution(UUID) → void (cascade via orphanRemoval)
 
   ─── addMember(UUID solutionId, AddSolutionMemberRequest) → SolutionMemberResponse
-      Purpose: Add a service to a solution with role
-      Throws: NotFoundException, ValidationException (already member)
+      Logic: Validate not already member → compute max displayOrder + 1 → create
 
   ─── updateMember(UUID solutionId, UUID serviceId, UpdateSolutionMemberRequest) → SolutionMemberResponse
-      Throws: NotFoundException
-
   ─── removeMember(UUID solutionId, UUID serviceId) → void
-      Throws: NotFoundException
 
   ─── reorderMembers(UUID solutionId, List<UUID> orderedServiceIds) → List<SolutionMemberResponse>
-      Purpose: Assign sequential displayOrder values
-      Throws: NotFoundException, ValidationException (invalid service ID)
+      Logic: Validate all IDs are members → assign sequential displayOrder → save all
 
   ─── getSolutionHealth(UUID) → SolutionHealthResponse
-      Purpose: Aggregate health from cached service health data (no live checks)
+      Purpose: Aggregates health from cached service data (no live HTTP calls)
+      Logic: Count UP/DOWN/DEGRADED/UNKNOWN → compute worst-case overall status
+```
 
-=== PortAllocationService.java ===
-Injected Dependencies: PortAllocationRepository, PortRangeRepository, ServiceRegistrationRepository
-
-Methods:
-  ─── autoAllocate(UUID serviceId, String env, PortType, UUID userId) → PortAllocationResponse
-      Purpose: Auto-allocate next available port from team's range
-      Logic: Lookup range (fall back to "local") → find used ports → iterate range → save
-      Throws: NotFoundException, ValidationException (no range, range full)
-
-  ─── autoAllocateAll(UUID, String, List<PortType>, UUID) → List<PortAllocationResponse>
-      Purpose: Batch auto-allocate multiple port types
-
-  ─── manualAllocate(AllocatePortRequest, UUID) → PortAllocationResponse
-      Purpose: Manually assign a specific port number
-      Throws: NotFoundException, ValidationException (port taken)
-
-  ─── releasePort(UUID allocationId) → void
-      Throws: NotFoundException
-
-  ─── checkAvailability(UUID teamId, int portNumber, String env) → PortCheckResponse
-      Purpose: Check if a port is available
-
-  ─── getPortsForService(UUID, String env) → List<PortAllocationResponse>
-  ─── getPortsForTeam(UUID, String env) → List<PortAllocationResponse>
-  ─── getPortMap(UUID, String env) → PortMapResponse
-      Purpose: Structured port map with ranges and their allocations
-
-  ─── detectConflicts(UUID teamId) → List<PortConflictResponse>
-      Purpose: Find same port allocated to multiple services
-
-  ─── getPortRanges(UUID teamId) → List<PortRangeResponse>
-  ─── updatePortRange(UUID rangeId, UpdatePortRangeRequest) → PortRangeResponse
-      Throws: NotFoundException, ValidationException (start >= end, shrinking excludes allocations)
-
-  ─── seedDefaultRanges(UUID teamId, String env) → List<PortRangeResponse>
-      Purpose: Seed default ranges from AppConstants if none exist. Idempotent.
-
-=== DependencyGraphService.java ===
+### DependencyGraphService.java (439 lines)
+```
 Injected Dependencies: ServiceDependencyRepository, ServiceRegistrationRepository
 
 Methods:
   ─── createDependency(CreateDependencyRequest) → ServiceDependencyResponse
-      Purpose: Create directed dependency edge with cycle detection
-      Logic: Validate same team → check no duplicate → check limit (50) → BFS hasPath for cycle detection → save
-      Throws: NotFoundException, ValidationException (self-dep, cross-team, duplicate, limit, cycle)
+      Logic: 1. Validate source ≠ target 2. Same team 3. No duplicate 4. Per-service limit check 5. Cycle detection via hasPath(BFS) 6. Create
+      Throws: ValidationException (self-ref, diff team, duplicate, limit exceeded, cycle detected)
 
   ─── removeDependency(UUID) → void
-      Throws: NotFoundException
-
-  ─── getDependencyGraph(UUID teamId) → DependencyGraphResponse
-      Purpose: All services as nodes, all dependencies as edges
+  ─── getDependencyGraph(UUID teamId) → DependencyGraphResponse (nodes + edges)
 
   ─── getImpactAnalysis(UUID serviceId) → ImpactAnalysisResponse
-      Purpose: BFS reverse traversal — who depends on me, transitively, with depth
+      Purpose: BFS reverse traversal — what breaks if this service goes down
+      Logic: Build reverse adjacency → BFS from service → track depth and connection type
 
   ─── getStartupOrder(UUID teamId) → List<DependencyNodeResponse>
-      Purpose: Kahn's algorithm topological sort for startup ordering
+      Purpose: Topological sort via Kahn's algorithm (inverted edges for startup order)
 
   ─── detectCycles(UUID teamId) → List<UUID>
-      Purpose: DFS three-color cycle detection, returns service IDs in cycles
+      Purpose: DFS three-color marking — WHITE/GRAY/BLACK cycle detection
+```
 
-  ─── hasPath(UUID from, UUID to, List<ServiceDependency>) → boolean (package-private)
-      Purpose: BFS reachability check for cycle prevention
+### PortAllocationService.java (447 lines)
+```
+Injected Dependencies: PortAllocationRepository, PortRangeRepository, ServiceRegistrationRepository
 
-=== ApiRouteService.java ===
+Methods:
+  ─── autoAllocate(UUID serviceId, String env, PortType, UUID userId) → PortAllocationResponse
+      Logic: Find range (fallback to "local") → scan for first free port in range → create allocation
+
+  ─── autoAllocateAll(UUID serviceId, String env, List<PortType>, UUID userId) → List<PortAllocationResponse>
+  ─── manualAllocate(AllocatePortRequest, UUID userId) → PortAllocationResponse
+  ─── releasePort(UUID allocationId) → void
+  ─── checkAvailability(UUID teamId, int port, String env) → PortCheckResponse
+  ─── getPortsForService(UUID serviceId, String env) → List<PortAllocationResponse>
+  ─── getPortsForTeam(UUID teamId, String env) → List<PortAllocationResponse>
+
+  ─── getPortMap(UUID teamId, String env) → PortMapResponse
+      Purpose: Structured map: ranges with their allocations, capacity/allocated/available counts
+
+  ─── detectConflicts(UUID teamId) → List<PortConflictResponse>
+      Purpose: Finds ports allocated to multiple services
+
+  ─── getPortRanges(UUID teamId) → List<PortRangeResponse>
+  ─── updatePortRange(UUID rangeId, UpdatePortRangeRequest) → PortRangeResponse
+  ─── seedDefaultRanges(UUID teamId, String env) → List<PortRangeResponse>
+```
+
+### ApiRouteService.java (225 lines)
+```
 Injected Dependencies: ApiRouteRegistrationRepository, ServiceRegistrationRepository
 
 Methods:
-  ─── createRoute(CreateRouteRequest, UUID) → ApiRouteResponse
-      Purpose: Register route prefix with collision detection
-      Logic: Normalize prefix → validate gateway (same team) → check overlapping routes (LIKE-based) → save
-      Throws: NotFoundException, ValidationException (cross-team gateway, overlap, invalid chars)
+  ─── createRoute(CreateRouteRequest, UUID userId) → ApiRouteResponse
+      Logic: Normalize prefix → check overlapping routes → create
+      Collision: Hierarchical prefix overlap detection via LIKE CONCAT
 
   ─── deleteRoute(UUID) → void
-      Throws: NotFoundException
-
-  ─── getRoutesForService(UUID) → List<ApiRouteResponse>
-  ─── getRoutesForGateway(UUID, String env) → List<ApiRouteResponse>
-
+  ─── getRoutesForService(UUID serviceId) → List<ApiRouteResponse>
+  ─── getRoutesForGateway(UUID gatewayId, String env) → List<ApiRouteResponse>
   ─── checkRouteAvailability(UUID gatewayId, String env, String prefix) → RouteCheckResponse
-      Purpose: Check if a route prefix is available
+  ─── normalizePrefix(String) → String — lowercase, leading slash, no trailing slash, validate pattern
+```
 
-  ─── normalizePrefix(String) → String (package-private)
-      Purpose: Trim, lowercase, ensure leading slash, remove trailing slash, validate chars
-
-=== InfraResourceService.java ===
+### InfraResourceService.java (270 lines)
+```
 Injected Dependencies: InfraResourceRepository, ServiceRegistrationRepository
 
 Methods:
-  ─── createResource(CreateInfraResourceRequest, UUID) → InfraResourceResponse
-      Purpose: Register infra resource with duplicate detection
-      Logic: Validate optional service (same team) → check duplicate by (team, type, name, env) → save
-      Throws: NotFoundException, ValidationException (cross-team, duplicate)
-
+  ─── createResource(CreateInfraResourceRequest, UUID userId) → InfraResourceResponse
   ─── updateResource(UUID, UpdateInfraResourceRequest) → InfraResourceResponse
-      Throws: NotFoundException
-
   ─── deleteResource(UUID) → void
-      Throws: NotFoundException
-
   ─── getResourcesForTeam(UUID, InfraResourceType, String env, Pageable) → PageResponse<InfraResourceResponse>
-      Paginated: Yes
-
-  ─── getResourcesForService(UUID) → List<InfraResourceResponse>
-
+  ─── getResourcesForService(UUID serviceId) → List<InfraResourceResponse>
   ─── findOrphanedResources(UUID teamId) → List<InfraResourceResponse>
-      Purpose: Find resources with no owning service
-
   ─── reassignResource(UUID resourceId, UUID newServiceId) → InfraResourceResponse
-      Throws: NotFoundException, ValidationException (cross-team)
+  ─── orphanResource(UUID resourceId) → InfraResourceResponse
+```
 
-  ─── orphanResource(UUID) → InfraResourceResponse
-      Purpose: Remove service ownership (set service to null)
-      Throws: NotFoundException
+### TopologyService.java (543 lines)
+```
+Injected Dependencies: ServiceRegistrationRepository, ServiceDependencyRepository, SolutionRepository, SolutionMemberRepository, PortAllocationRepository
+
+Methods:
+  ─── getTopology(UUID teamId) → TopologyResponse
+      Purpose: Full ecosystem view — nodes, edges, solution groups, layers, stats
+
+  ─── getTopologyForSolution(UUID solutionId) → TopologyResponse
+      Purpose: Solution-scoped — members + internal dependencies only
+
+  ─── getServiceNeighborhood(UUID serviceId, int depth) → TopologyResponse
+      Purpose: Ego-network — service + bidirectional neighbors within depth hops (max 3)
+
+  ─── getEcosystemStats(UUID teamId) → TopologyStatsResponse
+      Purpose: Quick aggregate stats without full graph build
+
+  Layer Classification:
+    - Infrastructure: DATABASE_SERVICE, MESSAGE_BROKER, CACHE_SERVICE
+    - Backend: SPRING_BOOT_API, EXPRESS_API, FASTAPI, DOTNET_API, GO_API, WORKER, MCP_SERVER
+    - Frontend: FLUTTER_WEB, FLUTTER_DESKTOP, FLUTTER_MOBILE, REACT_SPA, VUE_SPA, NEXT_JS
+    - Gateway: GATEWAY
+    - Standalone: LIBRARY, CLI_TOOL, OTHER
+```
+
+### HealthCheckService.java (251 lines)
+```
+Injected Dependencies: ServiceRegistrationRepository, SolutionMemberRepository, SolutionRepository, ServiceRegistryService
+
+Methods:
+  ─── getTeamHealthSummary(UUID teamId) → TeamHealthSummaryResponse (cached data)
+  ─── checkTeamHealth(UUID teamId) → TeamHealthSummaryResponse (live checks then summary)
+  ─── getUnhealthyServices(UUID teamId) → List<ServiceHealthResponse>
+  ─── getServicesNeverChecked(UUID teamId) → List<ServiceHealthResponse>
+  ─── checkSolutionHealth(UUID solutionId) → SolutionHealthResponse (parallel CompletableFuture)
+  ─── getServiceHealthHistory(UUID serviceId) → ServiceHealthResponse
+  ─── computeOverallHealth(boolean, int, int, int) → HealthStatus — DOWN > DEGRADED > UNKNOWN > UP
+```
+
+### ConfigEngineService.java (694 lines)
+```
+Injected Dependencies: ServiceRegistrationRepository, PortAllocationRepository, ServiceDependencyRepository, EnvironmentConfigRepository, ConfigTemplateRepository, ApiRouteRegistrationRepository, InfraResourceRepository, SolutionRepository, SolutionMemberRepository, DependencyGraphService
+
+Methods:
+  ─── generateDockerCompose(UUID serviceId, String env) → ConfigTemplateResponse
+  ─── generateApplicationYml(UUID serviceId, String env) → ConfigTemplateResponse
+  ─── generateClaudeCodeHeader(UUID serviceId, String env) → ConfigTemplateResponse
+  ─── generateAllForService(UUID serviceId, String env) → List<ConfigTemplateResponse>
+  ─── generateSolutionDockerCompose(UUID solutionId, String env) → ConfigTemplateResponse
+      Purpose: Docker Compose for entire solution with dependency-ordered startup
+  ─── getTemplate(UUID serviceId, ConfigTemplateType, String env) → ConfigTemplateResponse
+  ─── getTemplatesForService(UUID serviceId) → List<ConfigTemplateResponse>
+  ─── deleteTemplate(UUID templateId) → void
+
+  Upsert semantics: Templates updated on regeneration with version increment.
+  SnakeYAML used for YAML serialization.
+```
+
+### WorkstationProfileService.java (497 lines)
+```
+Injected Dependencies: WorkstationProfileRepository, ServiceRegistrationRepository, SolutionMemberRepository, SolutionRepository, DependencyGraphService, ObjectMapper
+
+Methods:
+  ─── createProfile(CreateWorkstationProfileRequest, UUID userId) → WorkstationProfileResponse
+      Logic: Check team limit → validate name unique → resolve service IDs → validate IDs → compute startup order → create
+
+  ─── getProfile(UUID) → WorkstationProfileResponse (enriched with service details)
+  ─── getProfilesForTeam(UUID teamId) → List<WorkstationProfileResponse> (lightweight)
+  ─── getDefaultProfile(UUID teamId) → WorkstationProfileResponse (enriched)
+  ─── updateProfile(UUID, UpdateWorkstationProfileRequest) → WorkstationProfileResponse
+  ─── deleteProfile(UUID) → void
+  ─── setDefault(UUID profileId) → WorkstationProfileResponse (mutual exclusion)
+  ─── createFromSolution(UUID solutionId, UUID teamId, UUID userId) → WorkstationProfileResponse
+  ─── refreshStartupOrder(UUID profileId) → WorkstationProfileResponse
+
+  JSON serialization: Service IDs and startup order stored as JSON arrays in TEXT columns.
+  Startup order computed from team's dependency graph via DependencyGraphService.getStartupOrder().
 ```
 
 ---
@@ -803,120 +908,131 @@ Methods:
 ## 10. Security Architecture
 
 **Authentication Flow:**
-- JWT tokens issued by **CodeOps-Server** (this service only validates, never issues)
-- HMAC-SHA256 shared secret (from `codeops.jwt.secret` / `JWT_SECRET` env var)
-- `JwtAuthFilter` extracts `Authorization: Bearer <token>`, validates via `JwtTokenValidator`, sets `SecurityContextHolder` with principal=UUID, credentials=email, authorities=ROLE_* prefixed roles
-- No token revocation/blacklist — tokens expire naturally
-
-**Token claims extracted:** `sub` (user UUID), `email`, `roles` (list), `teamIds` (list), `teamRoles` (map<teamId, role>)
+- JWT validation only (no token generation — Registry is a consuming service)
+- Algorithm: HMAC-SHA256 (shared secret with CodeOps-Server)
+- Claims extracted: `sub` (userId), `teamId`, `roles` (List<String>), `permissions` (List<String>)
+- Token validated by `JwtTokenValidator.validateToken(String token)` using jjwt library
+- On validation failure: 401 Unauthorized (no body)
 
 **Authorization Model:**
-- `@EnableMethodSecurity` is enabled. All 10 controllers use `@PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read|write|delete')")` on every endpoint (77 total secured endpoints)
-- Write endpoints require `hasRole('ADMIN') or hasAuthority('registry:write')`
-- Read endpoints require `hasRole('ADMIN') or hasAuthority('registry:read')`
-- Delete endpoints require `hasRole('ADMIN') or hasAuthority('registry:delete')`
-- `SecurityUtils` provides `getCurrentUserId()`, `getCurrentEmail()`, `isAuthenticated()`, `hasRole()`
-- Team membership is available from token claims (`getTeamIdsFromToken`, `getTeamRolesFromToken`)
+- Roles: `ADMIN` (only role checked in code)
+- Permissions/authorities: `registry:read`, `registry:write`, `registry:delete`
+- Pattern on controllers: `@PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read|write|delete')")`
+- 77 `@PreAuthorize` annotations across 10 controllers
+- All read endpoints require `ADMIN` role or `registry:read`
+- All write endpoints require `ADMIN` role or `registry:write`
+- All delete endpoints require `ADMIN` role or `registry:delete`
 
-**Security Filter Chain (order):**
-1. `RequestCorrelationFilter` (@Order HIGHEST_PRECEDENCE) — MDC correlationId/requestPath/requestMethod
-2. `RateLimitFilter` — per-IP rate limiting on `/api/v1/registry/**`
-3. `JwtAuthFilter` — JWT extraction and SecurityContext population
-4. (Spring Security built-in filters)
+**Security Filter Chain (SecurityConfig.java):**
+1. `RequestCorrelationFilter` (Ordered.HIGHEST_PRECEDENCE) — MDC correlation ID
+2. `RateLimitFilter` (before JwtAuthFilter) — IP-based rate limiting
+3. `JwtAuthFilter` (before UsernamePasswordAuthenticationFilter) — JWT extraction/validation
+4. Spring Security chain
 
-**Public paths (permitAll):** `/api/v1/health`, `/swagger-ui/**`, `/v3/api-docs/**`, `/v3/api-docs.yaml`
-**Authenticated paths:** `/api/**` and all other requests
+**Public paths (permitAll):**
+- `GET /health`
+- `GET /swagger-ui/**`
+- `GET /v3/api-docs/**`
+- `GET /swagger-ui.html`
 
-**Security headers:** CSP (`default-src 'self'; frame-ancestors 'none'`), X-Frame-Options DENY, X-Content-Type-Options, HSTS (1 year, includeSubDomains)
+**All other paths:** Authenticated (`/api/v1/registry/**`)
 
-**CORS:** Origins from config (dev: localhost:3000,3200,5173). Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS. Credentials: true. Preflight cache: 3600s.
+**CORS Configuration (CorsConfig.java):**
+- Origins: Configurable via `codeops.cors.allowed-origins` (comma-separated)
+- Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS
+- Headers: Authorization, Content-Type, X-Correlation-ID
+- Credentials: Allowed
+- Max age: 3600s
 
-**Rate limiting:** In-memory per-IP, 100 requests/minute on `/api/v1/registry/**`. Returns 429 JSON when exceeded.
+**Rate Limiting (RateLimitFilter.java):**
+- Scope: IP-based on `/api/v1/registry/**`
+- Strategy: In-memory ConcurrentHashMap with time-windowed counters
+- Limit: 100 requests per minute per IP
+- Response on violation: 429 Too Many Requests
 
-**Password policy:** N/A — this service does not handle authentication, only validates JWTs.
+**SecurityUtils.java:**
+- `getCurrentUserId()` → UUID from SecurityContext (JWT `sub` claim)
+- `getCurrentTeamId()` → UUID from SecurityContext (JWT `teamId` claim)
+- `hasRole(String role)` → boolean
+- `hasPermission(String permission)` → boolean
 
 ---
 
 ## 11. Notification / Messaging Layer
 
-No email, webhook, or message broker integration. No Kafka, RabbitMQ, or SQS/SNS detected.
+No notification or messaging layer detected in this project.
 
 ---
 
 ## 12. Error Handling
 
+**GlobalExceptionHandler.java** — `@RestControllerAdvice`
+
 ```
-Exception Type                    → HTTP Status → Response Body
-NotFoundException                 → 404         → {"status": 404, "message": "<entity> not found..."}
-ValidationException               → 400         → {"status": 400, "message": "<validation detail>"}
-AuthorizationException            → 403         → {"status": 403, "message": "<auth detail>"}
-EntityNotFoundException (JPA)     → 404         → {"status": 404, "message": "Resource not found"}
-IllegalArgumentException          → 400         → {"status": 400, "message": "Invalid request"}
-AccessDeniedException (Spring)    → 403         → {"status": 403, "message": "Access denied"}
-MethodArgumentNotValidException   → 400         → {"status": 400, "message": "field: error, field: error, ..."}
-HttpMessageNotReadableException   → 400         → {"status": 400, "message": "Malformed request body"}
-NoResourceFoundException          → 404         → {"status": 404, "message": "Resource not found"}
-CodeOpsRegistryException (base)   → 500         → {"status": 500, "message": "An internal error occurred"}
-Exception (catch-all)             → 500         → {"status": 500, "message": "An internal error occurred"}
+Exception Type                       → HTTP Status → Response Body
+NotFoundException                    → 404         → {"message": "...", "timestamp": "..."}
+ValidationException                  → 400         → {"message": "...", "timestamp": "..."}
+AuthorizationException               → 403         → {"message": "...", "timestamp": "..."}
+AccessDeniedException                → 403         → {"message": "Access denied", "timestamp": "..."}
+MethodArgumentNotValidException      → 400         → {"message": "Validation failed: field: msg", "timestamp": "..."}
+HttpMessageNotReadableException      → 400         → {"message": "Malformed request body", "timestamp": "..."}
+NoResourceFoundException             → 404         → {"message": "Resource not found", "timestamp": "..."}
+Exception (catch-all)                → 500         → {"message": "An unexpected error occurred", "timestamp": "..."}
 ```
 
-Internal error details are never exposed to clients. All exceptions logged at WARN (4xx) or ERROR (5xx) with full stack traces for 500s.
+**Exception hierarchy:**
+- `CodeOpsRegistryException` (base) extends `RuntimeException`
+  - `NotFoundException` — 404
+  - `ValidationException` — 400
+  - `AuthorizationException` — 403
 
-**Exception hierarchy:** `RuntimeException` ← `CodeOpsRegistryException` ← `{NotFoundException, ValidationException, AuthorizationException}`
+Internal error details (stack traces, exception messages) are logged server-side but NOT exposed to clients in the catch-all handler.
 
 ---
 
 ## 13. Test Coverage
 
-- **Unit test files:** 11
-- **Integration test files:** 1 (BaseIntegrationTest — abstract base, 0 @Test methods, provides Testcontainers PostgreSQL + JWT helper)
-- **Total @Test methods:** 222 (all unit)
-- **Test framework:** JUnit 5, Mockito 5.21.0 (MockitoExtension), AssertJ
-- **Test database:** H2 in-memory (unit), Testcontainers PostgreSQL (integration base)
-- **Test config:** `application-test.yml`, `application-integration.yml`
+```
+Unit Test Files:         26
+Integration Test Files:  1 (BaseIntegrationTest.java — base class, 0 @Test methods)
+Total @Test Methods:     548 (unit: 548, integration: 0)
+```
 
-| Test File | @Test Count | Mocks |
-|---|---|---|
-| CodeOpsRegistryApplicationTest | 1 | None (Spring context load) |
-| GlobalExceptionHandlerTest | 9 | None |
-| JwtTokenValidatorTest | 15 | None |
-| SecurityConfigTest | 8 | MockMvc |
-| ApiRouteServiceTest | 22 | Repos (2) |
-| DependencyGraphServiceTest | 36 | Repos (2) |
-| InfraResourceServiceTest | 20 | Repos (2) |
-| PortAllocationServiceTest | 41 | Repos (3) |
-| ServiceRegistryServiceTest | 30 | Repos (7) + PortAllocationService + RestTemplate |
-| SolutionServiceTest | 37 | Repos (3) |
-| SlugUtilsTest | 12 | None |
+- **Framework:** JUnit 5 + Mockito 5.21.0 (overridden for Java 25)
+- **Unit tests:** H2 in-memory database (`application-test.yml`, `MODE=PostgreSQL`)
+- **Controller tests:** `@WebMvcTest` with `MockMvc`, JWT tokens built manually via JJWT
+- **Service tests:** `@ExtendWith(MockitoExtension.class)` with `@Mock` / `@InjectMocks`
+- **Integration base:** `BaseIntegrationTest.java` configured for Testcontainers PostgreSQL (no concrete tests yet)
+- **Test config:** `application-test.yml` (H2), `application-integration.yml` (Testcontainers)
 
 ---
 
 ## 14. Cross-Cutting Patterns & Conventions
 
-- **Package structure:** `config`, `dto/request`, `dto/response`, `entity/enums`, `exception`, `repository`, `security`, `service`, `util`
-- **Base class:** `BaseEntity` (UUID PK + audit timestamps via @PrePersist/@PreUpdate)
-- **DTOs:** All Java records. Request DTOs use Jakarta validation annotations. Response DTOs are plain records.
-- **Naming:** Request DTOs: `Create*Request`, `Update*Request`, `Add*Request`. Response DTOs: `*Response`. Services: `*Service`. Repositories: `*Repository`.
-- **Pagination:** `PageResponse<T>` generic record wraps Spring `Page<T>`. Factory method: `PageResponse.from(page)`.
-- **Slug generation:** `SlugUtils.generateSlug()` (name → lowercase, hyphens, 2-63 chars, pattern `^[a-z0-9][a-z0-9-]*[a-z0-9]$`). `SlugUtils.makeUnique()` appends `-2`, `-3`, etc.
-- **Error handling:** Services throw `NotFoundException`/`ValidationException`/`AuthorizationException`. `GlobalExceptionHandler` catches all.
-- **Validation:** DTO annotations for field-level, service logic for business rules (limits, uniqueness, cycles).
-- **Constants:** `AppConstants` — pagination defaults, port ranges, slug rules, health check params, per-team limits.
-- **Logging:** `@Slf4j` on all services. `LoggingInterceptor` logs request/response for all `/api/**`. `RequestCorrelationFilter` provides MDC correlationId.
-- **Documentation:** Javadoc present on all classes and public methods (services, security, config, entities, repositories, enums, exceptions, util).
-- **Controllers:** 10 REST controllers expose all service-layer methods via secured endpoints with `@PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:*')")` annotations.
+- **Naming:** Controllers use REST verbs (`registerService`, `getServiceById`, `updateService`, `deleteService`). Services mirror controller names. DTOs use `*Request` / `*Response` suffixes.
+- **Package structure:** Layer-based — config, controller, dto (request/response), entity (enums), exception, repository, security, service, util.
+- **Base classes:** `BaseEntity` (UUID PK + audit timestamps) extended by all entities.
+- **Error handling:** Services throw `NotFoundException`/`ValidationException`/`AuthorizationException` → caught by `GlobalExceptionHandler`.
+- **Pagination:** `Pageable` parameter in controller methods → `PageResponse<T>` wrapper DTO.
+- **Validation:** Jakarta Bean Validation annotations on request DTOs (`@NotBlank`, `@NotNull`, `@Size`). Business rule validation in services.
+- **Constants:** `AppConstants.java` — slug pattern, slug min/max length, max dependencies per service, max workstation profiles per team, default port ranges per PortType.
+- **Logging:** `@Slf4j` on all services and security classes. `LoggingInterceptor` logs method/URI/status/duration. `RequestCorrelationFilter` sets MDC correlationId/requestPath/requestMethod.
+- **Documentation comments:** Javadoc present on ~19/55 non-DTO/entity classes. ~43/111 public methods in services/controllers/security have Javadoc.
+- **Transactional:** `@Transactional(readOnly = true)` at class level on services; `@Transactional` on mutation methods.
 
 ---
 
 ## 15. Known Issues, TODOs, and Technical Debt
 
-No `TODO`, `FIXME`, `HACK`, `XXX`, `WORKAROUND`, or `TEMPORARY` comments found in the codebase.
+No TODO, FIXME, HACK, XXX, WORKAROUND, or TEMPORARY comments found in `src/`.
 
 ---
 
 ## 16. OpenAPI Specification
 
-Produced as `openapi.yaml` — see separate file. **Note:** Since no controllers exist yet, the OpenAPI spec documents the **intended** API surface based on the service layer, DTOs, and project design. It serves as the contract for controller implementation.
+The OpenAPI spec is generated by SpringDoc (`springdoc-openapi-starter-webmvc-ui` 2.5.0) from the running application. It is fetched from `http://localhost:8096/v3/api-docs.yaml` and saved as `openapi.yaml` in the project root.
+
+See `openapi.yaml` for all endpoints, request/response DTOs, field types, and validation constraints.
 
 ---
 
@@ -924,7 +1040,7 @@ Produced as `openapi.yaml` — see separate file. **Note:** Since no controllers
 
 Database not available for live audit. Schema documented from JPA entities only (Section 6).
 
-**Database details:** PostgreSQL at `localhost:5435/codeops_registry` (container: `codeops-registry-db`), managed by Hibernate `ddl-auto: update`.
+Note: The PostgreSQL container runs on `127.0.0.1:5435`, database `codeops_registry`, user `codeops`. Connect via: `docker exec -it codeops-registry-db psql -U codeops -d codeops_registry`
 
 ---
 
@@ -944,27 +1060,33 @@ No Redis or caching layer detected in this project.
 
 | Variable | Required | Default | Used By | Purpose |
 |---|---|---|---|---|
-| DB_USERNAME | No | `codeops` | application-dev.yml | Database username |
-| DB_PASSWORD | No | `codeops` | application-dev.yml | Database password |
-| JWT_SECRET | **Yes (prod)** | dev default (54 chars) | JwtProperties | Shared HMAC secret for JWT validation |
-| CODEOPS_SERVER_URL | **Yes (prod)** | `http://localhost:8095` | ServiceUrlProperties | CodeOps-Server base URL |
-| CODEOPS_VAULT_URL | **Yes (prod)** | `http://localhost:8097` | ServiceUrlProperties | CodeOps-Vault base URL |
-| CODEOPS_LOGGER_URL | **Yes (prod)** | `http://localhost:8098` | ServiceUrlProperties | CodeOps-Logger base URL |
-| CORS_ALLOWED_ORIGINS | **Yes (prod)** | localhost:3000 (dev) | CorsConfig | Allowed CORS origins |
-| DATABASE_URL | **Yes (prod)** | N/A | application-prod.yml | Full JDBC URL |
-| DATABASE_USERNAME | **Yes (prod)** | N/A | application-prod.yml | Production DB username |
-| DATABASE_PASSWORD | **Yes (prod)** | N/A | application-prod.yml | Production DB password |
+| `DATABASE_URL` | Yes (prod) | None | application-prod.yml | PostgreSQL JDBC URL |
+| `DATABASE_USERNAME` | Yes (prod) | None | application-prod.yml | Database username |
+| `DATABASE_PASSWORD` | Yes (prod) | None | application-prod.yml | Database password |
+| `DB_USERNAME` | No | `codeops` | application-dev.yml | Dev database username |
+| `DB_PASSWORD` | No | `codeops` | application-dev.yml | Dev database password |
+| `JWT_SECRET` | Yes (prod) | dev default (dev) | application-dev/prod.yml | HMAC-SHA256 JWT signing key |
+| `CORS_ALLOWED_ORIGINS` | Yes (prod) | localhost (dev) | application-dev/prod.yml | Allowed CORS origins |
+| `CODEOPS_SERVER_URL` | Yes (prod) | `http://localhost:8095` | application-dev/prod.yml | CodeOps-Server base URL |
+| `CODEOPS_VAULT_URL` | Yes (prod) | `http://localhost:8097` | application-dev/prod.yml | CodeOps-Vault base URL |
+| `CODEOPS_LOGGER_URL` | Yes (prod) | `http://localhost:8098` | application-dev/prod.yml | CodeOps-Logger base URL |
 
-**Warning:** `JWT_SECRET` has a hardcoded dev default — safe for dev, must be overridden in production.
+**Production warning:** All production variables are required with no defaults — deployment will fail if not set.
 
 ---
 
 ## 21. Inter-Service Communication Map
 
-**Outbound:** `RestTemplate` is injected into `ServiceRegistryService` and used **only** for health checks (GET to service's `healthCheckUrl`). No other outbound HTTP calls exist.
+**Outbound HTTP calls:**
+- `ServiceRegistryService` uses `RestTemplate` to call `service.getHealthCheckUrl()` for live health checks (arbitrary service URLs configured per service registration).
 
-`ServiceUrlProperties` defines URLs for CodeOps-Server, Vault, and Logger — but none are currently called from code. These are placeholders for future cross-service communication.
+**Configured service URLs (not yet used in code beyond DataSeeder):**
+- `ServiceUrlProperties.serverUrl` → CodeOps-Server (`http://localhost:8095`)
+- `ServiceUrlProperties.vaultUrl` → CodeOps-Vault (`http://localhost:8097`)
+- `ServiceUrlProperties.loggerUrl` → CodeOps-Logger (`http://localhost:8098`)
 
-**Inbound:** Other CodeOps services (Client, Server) call this Registry service's API (once controllers are implemented). Authentication is via shared JWT tokens from CodeOps-Server.
+**Inbound dependencies:**
+- CodeOps-Client (Flutter desktop app) calls Registry API endpoints.
+- Other CodeOps services may consume Registry data.
 
-Standalone service with no active outbound service-to-service HTTP calls beyond health checking.
+**RestTemplate configuration:** `RestTemplateConfig.java` — 5s connect timeout, 10s read timeout.
