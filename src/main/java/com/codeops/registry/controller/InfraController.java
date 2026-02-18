@@ -23,9 +23,9 @@ import java.util.UUID;
 /**
  * REST controller for infrastructure resource tracking, orphan detection, and reassignment.
  *
- * <p>All endpoints require JWT authentication. Write operations require the {@code ARCHITECT}
- * role or the {@code registry:write} authority; read operations require the {@code ARCHITECT}
- * role or the {@code registry:read} authority; delete operations require the {@code ARCHITECT}
+ * <p>All endpoints require JWT authentication. Write operations require the {@code ADMIN}
+ * role or the {@code registry:write} authority; read operations require the {@code ADMIN}
+ * role or the {@code registry:read} authority; delete operations require the {@code ADMIN}
  * role or the {@code registry:delete} authority.</p>
  *
  * @see InfraResourceService
@@ -47,7 +47,7 @@ public class InfraController {
      * @return a 201 response with the created resource
      */
     @PostMapping("/teams/{teamId}/infra-resources")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<InfraResourceResponse> createResource(
             @PathVariable UUID teamId,
             @Valid @RequestBody CreateInfraResourceRequest request) {
@@ -67,7 +67,7 @@ public class InfraController {
      * @return a 200 response with a paginated list of infrastructure resources
      */
     @GetMapping("/teams/{teamId}/infra-resources")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<PageResponse<InfraResourceResponse>> getResourcesForTeam(
             @PathVariable UUID teamId,
             @RequestParam(required = false) InfraResourceType type,
@@ -86,7 +86,7 @@ public class InfraController {
      * @return a 200 response with the updated resource
      */
     @PutMapping("/infra-resources/{resourceId}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<InfraResourceResponse> updateResource(
             @PathVariable UUID resourceId,
             @Valid @RequestBody UpdateInfraResourceRequest request) {
@@ -100,7 +100,7 @@ public class InfraController {
      * @return a 204 response with no content
      */
     @DeleteMapping("/infra-resources/{resourceId}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:delete')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:delete')")
     public ResponseEntity<Void> deleteResource(@PathVariable UUID resourceId) {
         infraResourceService.deleteResource(resourceId);
         return ResponseEntity.noContent().build();
@@ -113,7 +113,7 @@ public class InfraController {
      * @return a 200 response with the list of resources
      */
     @GetMapping("/services/{serviceId}/infra-resources")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<List<InfraResourceResponse>> getResourcesForService(
             @PathVariable UUID serviceId) {
         return ResponseEntity.ok(infraResourceService.getResourcesForService(serviceId));
@@ -126,7 +126,7 @@ public class InfraController {
      * @return a 200 response with the list of orphaned resources
      */
     @GetMapping("/teams/{teamId}/infra-resources/orphans")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<List<InfraResourceResponse>> findOrphanedResources(
             @PathVariable UUID teamId) {
         return ResponseEntity.ok(infraResourceService.findOrphanedResources(teamId));
@@ -140,7 +140,7 @@ public class InfraController {
      * @return a 200 response with the updated resource
      */
     @PatchMapping("/infra-resources/{resourceId}/reassign")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<InfraResourceResponse> reassignResource(
             @PathVariable UUID resourceId,
             @RequestParam UUID newServiceId) {
@@ -154,7 +154,7 @@ public class InfraController {
      * @return a 200 response with the updated resource
      */
     @PatchMapping("/infra-resources/{resourceId}/orphan")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<InfraResourceResponse> orphanResource(
             @PathVariable UUID resourceId) {
         return ResponseEntity.ok(infraResourceService.orphanResource(resourceId));

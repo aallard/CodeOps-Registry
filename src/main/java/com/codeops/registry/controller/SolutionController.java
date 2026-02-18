@@ -29,8 +29,8 @@ import java.util.UUID;
 /**
  * REST controller for solution CRUD, member management, and aggregated health.
  *
- * <p>All endpoints require JWT authentication. Write operations require the {@code ARCHITECT}
- * role or the {@code registry:write} authority; read operations require the {@code ARCHITECT}
+ * <p>All endpoints require JWT authentication. Write operations require the {@code ADMIN}
+ * role or the {@code registry:write} authority; read operations require the {@code ADMIN}
  * role or the {@code registry:read} authority.</p>
  *
  * @see SolutionService
@@ -52,7 +52,7 @@ public class SolutionController {
      * @return a 201 response with the created solution
      */
     @PostMapping("/teams/{teamId}/solutions")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<SolutionResponse> createSolution(
             @PathVariable UUID teamId,
             @Valid @RequestBody CreateSolutionRequest request) {
@@ -71,7 +71,7 @@ public class SolutionController {
      * @return a 200 response with the paginated solution list
      */
     @GetMapping("/teams/{teamId}/solutions")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<PageResponse<SolutionResponse>> getSolutionsForTeam(
             @PathVariable UUID teamId,
             @RequestParam(required = false) SolutionStatus status,
@@ -87,7 +87,7 @@ public class SolutionController {
      * @return a 200 response with the solution
      */
     @GetMapping("/solutions/{solutionId}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<SolutionResponse> getSolution(@PathVariable UUID solutionId) {
         return ResponseEntity.ok(solutionService.getSolution(solutionId));
     }
@@ -100,7 +100,7 @@ public class SolutionController {
      * @return a 200 response with the updated solution
      */
     @PutMapping("/solutions/{solutionId}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<SolutionResponse> updateSolution(
             @PathVariable UUID solutionId,
             @Valid @RequestBody UpdateSolutionRequest request) {
@@ -114,7 +114,7 @@ public class SolutionController {
      * @return a 204 response with no content
      */
     @DeleteMapping("/solutions/{solutionId}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<Void> deleteSolution(@PathVariable UUID solutionId) {
         solutionService.deleteSolution(solutionId);
         return ResponseEntity.noContent().build();
@@ -127,7 +127,7 @@ public class SolutionController {
      * @return a 200 response with the solution detail
      */
     @GetMapping("/solutions/{solutionId}/detail")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<SolutionDetailResponse> getSolutionDetail(@PathVariable UUID solutionId) {
         return ResponseEntity.ok(solutionService.getSolutionDetail(solutionId));
     }
@@ -140,7 +140,7 @@ public class SolutionController {
      * @return a 201 response with the created solution member
      */
     @PostMapping("/solutions/{solutionId}/members")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<SolutionMemberResponse> addSolutionMember(
             @PathVariable UUID solutionId,
             @Valid @RequestBody AddSolutionMemberRequest request) {
@@ -157,7 +157,7 @@ public class SolutionController {
      * @return a 200 response with the updated solution member
      */
     @PutMapping("/solutions/{solutionId}/members/{serviceId}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<SolutionMemberResponse> updateSolutionMember(
             @PathVariable UUID solutionId,
             @PathVariable UUID serviceId,
@@ -173,7 +173,7 @@ public class SolutionController {
      * @return a 204 response with no content
      */
     @DeleteMapping("/solutions/{solutionId}/members/{serviceId}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<Void> removeSolutionMember(
             @PathVariable UUID solutionId,
             @PathVariable UUID serviceId) {
@@ -189,7 +189,7 @@ public class SolutionController {
      * @return a 200 response with the reordered member list
      */
     @PutMapping("/solutions/{solutionId}/members/reorder")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<List<SolutionMemberResponse>> reorderSolutionMembers(
             @PathVariable UUID solutionId,
             @RequestBody List<UUID> orderedServiceIds) {
@@ -203,7 +203,7 @@ public class SolutionController {
      * @return a 200 response with the aggregated health
      */
     @GetMapping("/solutions/{solutionId}/health")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<SolutionHealthResponse> getSolutionHealth(@PathVariable UUID solutionId) {
         return ResponseEntity.ok(solutionService.getSolutionHealth(solutionId));
     }

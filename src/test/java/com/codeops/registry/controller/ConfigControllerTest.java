@@ -66,8 +66,8 @@ class ConfigControllerTest {
                 .compact();
     }
 
-    private String architectToken() {
-        return buildToken("ARCHITECT");
+    private String adminToken() {
+        return buildToken("ADMIN");
     }
 
     private String memberToken() {
@@ -139,7 +139,7 @@ class ConfigControllerTest {
                 .thenReturn(sampleConfigResponse(ConfigTemplateType.DOCKER_COMPOSE));
 
         mockMvc.perform(post("/api/v1/registry/services/{serviceId}/config/generate", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("type", "DOCKER_COMPOSE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.templateType").value("DOCKER_COMPOSE"))
@@ -152,7 +152,7 @@ class ConfigControllerTest {
                 .thenReturn(sampleConfigResponse(ConfigTemplateType.APPLICATION_YML));
 
         mockMvc.perform(post("/api/v1/registry/services/{serviceId}/config/generate", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("type", "APPLICATION_YML"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.templateType").value("APPLICATION_YML"));
@@ -164,7 +164,7 @@ class ConfigControllerTest {
                 .thenReturn(sampleConfigResponse(ConfigTemplateType.CLAUDE_CODE_HEADER));
 
         mockMvc.perform(post("/api/v1/registry/services/{serviceId}/config/generate", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("type", "CLAUDE_CODE_HEADER"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.templateType").value("CLAUDE_CODE_HEADER"));
@@ -174,7 +174,7 @@ class ConfigControllerTest {
     void generateConfig_unsupportedType_returns400() throws Exception {
         // ENV_FILE is not supported by the generate switch — returns ValidationException → 400
         mockMvc.perform(post("/api/v1/registry/services/{serviceId}/config/generate", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("type", "ENV_FILE"))
                 .andExpect(status().isBadRequest());
     }
@@ -186,7 +186,7 @@ class ConfigControllerTest {
                 .thenThrow(new NotFoundException("ServiceRegistration", missingId));
 
         mockMvc.perform(post("/api/v1/registry/services/{serviceId}/config/generate", missingId)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("type", "DOCKER_COMPOSE"))
                 .andExpect(status().isNotFound());
     }
@@ -204,7 +204,7 @@ class ConfigControllerTest {
                         sampleConfigResponse(ConfigTemplateType.CLAUDE_CODE_HEADER)));
 
         mockMvc.perform(post("/api/v1/registry/services/{serviceId}/config/generate-all", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()").value(3));
@@ -217,7 +217,7 @@ class ConfigControllerTest {
 
         mockMvc.perform(post("/api/v1/registry/solutions/{solutionId}/config/docker-compose",
                         SOLUTION_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.templateType").value("DOCKER_COMPOSE"));
     }
@@ -232,7 +232,7 @@ class ConfigControllerTest {
                 .thenReturn(sampleConfigResponse(ConfigTemplateType.DOCKER_COMPOSE));
 
         mockMvc.perform(get("/api/v1/registry/services/{serviceId}/config", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("type", "DOCKER_COMPOSE")
                         .param("environment", "local"))
                 .andExpect(status().isOk())
@@ -247,7 +247,7 @@ class ConfigControllerTest {
                         "ConfigTemplate for service " + SERVICE_ID + " type APPLICATION_YML env dev"));
 
         mockMvc.perform(get("/api/v1/registry/services/{serviceId}/config", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("type", "APPLICATION_YML")
                         .param("environment", "dev"))
                 .andExpect(status().isNotFound());
@@ -259,7 +259,7 @@ class ConfigControllerTest {
                 .thenReturn(List.of(sampleConfigResponse(ConfigTemplateType.DOCKER_COMPOSE)));
 
         mockMvc.perform(get("/api/v1/registry/services/{serviceId}/config/all", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].templateType").value("DOCKER_COMPOSE"));
@@ -274,7 +274,7 @@ class ConfigControllerTest {
         doNothing().when(configEngineService).deleteTemplate(TEMPLATE_ID);
 
         mockMvc.perform(delete("/api/v1/registry/config/{templateId}", TEMPLATE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNoContent());
     }
 
@@ -285,7 +285,7 @@ class ConfigControllerTest {
                 .when(configEngineService).deleteTemplate(missingId);
 
         mockMvc.perform(delete("/api/v1/registry/config/{templateId}", missingId)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNotFound());
     }
 }

@@ -94,7 +94,7 @@ public class DataSeeder implements CommandLineRunner {
                         "Core authentication and team management server",
                         "https://github.com/aallard/CodeOps-Server",
                         "aallard/CodeOps-Server", "Java, Spring Boot 3.3, PostgreSQL, Redis, Kafka",
-                        "http://localhost:8090/api/v1/health"),
+                        "http://localhost:8095/api/v1/health"),
                 buildService("CodeOps Registry", "codeops-registry", ServiceType.SPRING_BOOT_API,
                         "Service registry and development control plane",
                         "https://github.com/aallard/CodeOps-Registry",
@@ -273,7 +273,7 @@ public class DataSeeder implements CommandLineRunner {
     private void seedPortAllocations(Map<String, ServiceRegistration> services) {
         List<PortAllocation> allocations = new ArrayList<>();
 
-        allocations.addAll(buildPorts(services.get("codeops-server"), 8090, 5432, null));
+        allocations.addAll(buildPorts(services.get("codeops-server"), 8095, 5432, null));
         allocations.addAll(buildPorts(services.get("codeops-registry"), 8096, 5435, null));
         allocations.addAll(buildPorts(services.get("codeops-vault"), 8097, 5436, null));
         allocations.addAll(buildPorts(services.get("codeops-logger"), 8098, 5437, null));

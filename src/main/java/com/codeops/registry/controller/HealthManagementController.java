@@ -21,9 +21,9 @@ import java.util.UUID;
  * and cached health data retrieval. Separate from the public {@code /api/v1/health}
  * endpoint (handled by {@code config.HealthController}).</p>
  *
- * <p>All endpoints require JWT authentication. Read operations require the {@code ARCHITECT}
+ * <p>All endpoints require JWT authentication. Read operations require the {@code ADMIN}
  * role or the {@code registry:read} authority; write operations (live checks) require the
- * {@code ARCHITECT} role or the {@code registry:write} authority.</p>
+ * {@code ADMIN} role or the {@code registry:write} authority.</p>
  *
  * @see HealthCheckService
  */
@@ -43,7 +43,7 @@ public class HealthManagementController {
      * @return a 200 response with the team health summary
      */
     @GetMapping("/teams/{teamId}/health/summary")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<TeamHealthSummaryResponse> getTeamHealthSummary(
             @PathVariable UUID teamId) {
         return ResponseEntity.ok(healthCheckService.getTeamHealthSummary(teamId));
@@ -57,7 +57,7 @@ public class HealthManagementController {
      * @return a 200 response with the fresh team health summary
      */
     @PostMapping("/teams/{teamId}/health/check")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<TeamHealthSummaryResponse> checkTeamHealth(
             @PathVariable UUID teamId) {
         return ResponseEntity.ok(healthCheckService.checkTeamHealth(teamId));
@@ -70,7 +70,7 @@ public class HealthManagementController {
      * @return a 200 response with the list of unhealthy services
      */
     @GetMapping("/teams/{teamId}/health/unhealthy")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<List<ServiceHealthResponse>> getUnhealthyServices(
             @PathVariable UUID teamId) {
         return ResponseEntity.ok(healthCheckService.getUnhealthyServices(teamId));
@@ -83,7 +83,7 @@ public class HealthManagementController {
      * @return a 200 response with the list of never-checked services
      */
     @GetMapping("/teams/{teamId}/health/never-checked")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<List<ServiceHealthResponse>> getServicesNeverChecked(
             @PathVariable UUID teamId) {
         return ResponseEntity.ok(healthCheckService.getServicesNeverChecked(teamId));
@@ -97,7 +97,7 @@ public class HealthManagementController {
      * @return a 200 response with the solution health
      */
     @PostMapping("/solutions/{solutionId}/health/check")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<SolutionHealthResponse> checkSolutionHealth(
             @PathVariable UUID solutionId) {
         return ResponseEntity.ok(healthCheckService.checkSolutionHealth(solutionId));
@@ -111,7 +111,7 @@ public class HealthManagementController {
      * @return a 200 response with the cached service health
      */
     @GetMapping("/services/{serviceId}/health/cached")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<ServiceHealthResponse> getServiceHealthCached(
             @PathVariable UUID serviceId) {
         return ResponseEntity.ok(healthCheckService.getServiceHealthHistory(serviceId));

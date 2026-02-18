@@ -75,8 +75,8 @@ class InfraControllerTest {
                 .compact();
     }
 
-    private String architectToken() {
-        return buildToken("ARCHITECT");
+    private String adminToken() {
+        return buildToken("ADMIN");
     }
 
     private String memberToken() {
@@ -157,7 +157,7 @@ class InfraControllerTest {
                 "my-bucket", "local", "us-east-1", "arn:aws:s3:::my-bucket", null, "Test bucket"));
 
         mockMvc.perform(post("/api/v1/registry/teams/{teamId}/infra-resources", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -169,7 +169,7 @@ class InfraControllerTest {
     void createResource_invalidBody_returns400() throws Exception {
         // Missing required fields: teamId, resourceType, resourceName, environment
         mockMvc.perform(post("/api/v1/registry/teams/{teamId}/infra-resources", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"teamId\":null}"))
                 .andExpect(status().isBadRequest());
@@ -186,7 +186,7 @@ class InfraControllerTest {
                 "my-bucket", "local", null, null, null, null));
 
         mockMvc.perform(post("/api/v1/registry/teams/{teamId}/infra-resources", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest());
@@ -204,7 +204,7 @@ class InfraControllerTest {
                         List.of(sampleInfraResponse()), 0, 20, 1, 1, true));
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/infra-resources", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content[0].resourceName").value("my-bucket"));
@@ -218,7 +218,7 @@ class InfraControllerTest {
                         List.of(sampleInfraResponse()), 0, 20, 1, 1, true));
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/infra-resources", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("type", "S3_BUCKET")
                         .param("environment", "local"))
                 .andExpect(status().isOk())
@@ -231,7 +231,7 @@ class InfraControllerTest {
                 .thenReturn(List.of(sampleInfraResponse()));
 
         mockMvc.perform(get("/api/v1/registry/services/{serviceId}/infra-resources", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].resourceName").value("my-bucket"));
@@ -243,7 +243,7 @@ class InfraControllerTest {
                 .thenReturn(List.of());
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/infra-resources/orphans", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
@@ -261,7 +261,7 @@ class InfraControllerTest {
                 null, "updated-bucket", "us-west-2", null, null, "Updated description"));
 
         mockMvc.perform(put("/api/v1/registry/infra-resources/{resourceId}", RESOURCE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
@@ -278,7 +278,7 @@ class InfraControllerTest {
                 null, "updated-bucket", null, null, null, null));
 
         mockMvc.perform(put("/api/v1/registry/infra-resources/{resourceId}", missingId)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isNotFound());
@@ -293,7 +293,7 @@ class InfraControllerTest {
         doNothing().when(infraResourceService).deleteResource(RESOURCE_ID);
 
         mockMvc.perform(delete("/api/v1/registry/infra-resources/{resourceId}", RESOURCE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNoContent());
     }
 
@@ -304,7 +304,7 @@ class InfraControllerTest {
                 .when(infraResourceService).deleteResource(missingId);
 
         mockMvc.perform(delete("/api/v1/registry/infra-resources/{resourceId}", missingId)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNotFound());
     }
 
@@ -319,7 +319,7 @@ class InfraControllerTest {
                 .thenReturn(sampleInfraResponse());
 
         mockMvc.perform(patch("/api/v1/registry/infra-resources/{resourceId}/reassign", RESOURCE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("newServiceId", newServiceId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.resourceName").value("my-bucket"));
@@ -333,7 +333,7 @@ class InfraControllerTest {
                 .thenThrow(new NotFoundException("InfraResource", missingId));
 
         mockMvc.perform(patch("/api/v1/registry/infra-resources/{resourceId}/reassign", missingId)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("newServiceId", newServiceId.toString()))
                 .andExpect(status().isNotFound());
     }
@@ -346,7 +346,7 @@ class InfraControllerTest {
                         "Cannot reassign resource to a service in a different team"));
 
         mockMvc.perform(patch("/api/v1/registry/infra-resources/{resourceId}/reassign", RESOURCE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("newServiceId", newServiceId.toString()))
                 .andExpect(status().isBadRequest());
     }
@@ -357,7 +357,7 @@ class InfraControllerTest {
                 .thenReturn(sampleInfraResponse());
 
         mockMvc.perform(patch("/api/v1/registry/infra-resources/{resourceId}/orphan", RESOURCE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.resourceName").value("my-bucket"));
     }

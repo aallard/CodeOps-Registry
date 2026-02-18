@@ -22,10 +22,10 @@ import java.util.UUID;
  *
  * <p>Provides CRUD operations for workstation profiles, default profile management,
  * solution-based profile creation, and startup order refresh. All endpoints require
- * JWT authentication. Write operations require the {@code ARCHITECT} role or the
- * {@code registry:write} authority; read operations require the {@code ARCHITECT}
+ * JWT authentication. Write operations require the {@code ADMIN} role or the
+ * {@code registry:write} authority; read operations require the {@code ADMIN}
  * role or the {@code registry:read} authority; delete operations require the
- * {@code ARCHITECT} role or the {@code registry:delete} authority.</p>
+ * {@code ADMIN} role or the {@code registry:delete} authority.</p>
  *
  * @see WorkstationProfileService
  */
@@ -46,7 +46,7 @@ public class WorkstationController {
      * @return a 201 response with the created profile
      */
     @PostMapping("/teams/{teamId}/workstations")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<WorkstationProfileResponse> createProfile(
             @PathVariable UUID teamId,
             @Valid @RequestBody CreateWorkstationProfileRequest request) {
@@ -62,7 +62,7 @@ public class WorkstationController {
      * @return a 200 response with the list of profiles
      */
     @GetMapping("/teams/{teamId}/workstations")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<List<WorkstationProfileResponse>> getProfilesForTeam(
             @PathVariable UUID teamId) {
         return ResponseEntity.ok(workstationProfileService.getProfilesForTeam(teamId));
@@ -75,7 +75,7 @@ public class WorkstationController {
      * @return a 200 response with the profile
      */
     @GetMapping("/workstations/{profileId}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<WorkstationProfileResponse> getProfile(
             @PathVariable UUID profileId) {
         return ResponseEntity.ok(workstationProfileService.getProfile(profileId));
@@ -89,7 +89,7 @@ public class WorkstationController {
      * @return a 200 response with the updated profile
      */
     @PutMapping("/workstations/{profileId}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<WorkstationProfileResponse> updateProfile(
             @PathVariable UUID profileId,
             @Valid @RequestBody UpdateWorkstationProfileRequest request) {
@@ -103,7 +103,7 @@ public class WorkstationController {
      * @return a 204 response with no content
      */
     @DeleteMapping("/workstations/{profileId}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:delete')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:delete')")
     public ResponseEntity<Void> deleteProfile(@PathVariable UUID profileId) {
         workstationProfileService.deleteProfile(profileId);
         return ResponseEntity.noContent().build();
@@ -116,7 +116,7 @@ public class WorkstationController {
      * @return a 200 response with the default profile
      */
     @GetMapping("/teams/{teamId}/workstations/default")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<WorkstationProfileResponse> getDefaultProfile(
             @PathVariable UUID teamId) {
         return ResponseEntity.ok(workstationProfileService.getDefaultProfile(teamId));
@@ -129,7 +129,7 @@ public class WorkstationController {
      * @return a 200 response with the updated profile
      */
     @PatchMapping("/workstations/{profileId}/set-default")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<WorkstationProfileResponse> setDefault(
             @PathVariable UUID profileId) {
         return ResponseEntity.ok(workstationProfileService.setDefault(profileId));
@@ -143,7 +143,7 @@ public class WorkstationController {
      * @return a 201 response with the created profile
      */
     @PostMapping("/solutions/{solutionId}/workstations/from-solution")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<WorkstationProfileResponse> createFromSolution(
             @PathVariable UUID solutionId,
             @RequestParam UUID teamId) {
@@ -159,7 +159,7 @@ public class WorkstationController {
      * @return a 200 response with the updated profile
      */
     @PostMapping("/workstations/{profileId}/refresh-startup-order")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<WorkstationProfileResponse> refreshStartupOrder(
             @PathVariable UUID profileId) {
         return ResponseEntity.ok(workstationProfileService.refreshStartupOrder(profileId));

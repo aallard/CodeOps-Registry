@@ -17,7 +17,7 @@ import java.util.UUID;
  *
  * <p>Provides team-wide, solution-scoped, and neighborhood-scoped topology views
  * with nodes, edges, solution groupings, layer classification, and aggregate statistics.
- * All endpoints require JWT authentication and the {@code ARCHITECT} role or the
+ * All endpoints require JWT authentication and the {@code ADMIN} role or the
  * {@code registry:read} authority.</p>
  *
  * @see TopologyService
@@ -38,7 +38,7 @@ public class TopologyController {
      * @return a 200 response with the full topology (nodes, edges, layers, stats)
      */
     @GetMapping("/teams/{teamId}/topology")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<TopologyResponse> getTopology(@PathVariable UUID teamId) {
         return ResponseEntity.ok(topologyService.getTopology(teamId));
     }
@@ -50,7 +50,7 @@ public class TopologyController {
      * @return a 200 response with the solution-scoped topology
      */
     @GetMapping("/solutions/{solutionId}/topology")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<TopologyResponse> getSolutionTopology(@PathVariable UUID solutionId) {
         return ResponseEntity.ok(topologyService.getTopologyForSolution(solutionId));
     }
@@ -63,7 +63,7 @@ public class TopologyController {
      * @return a 200 response with the neighborhood topology
      */
     @GetMapping("/services/{serviceId}/topology/neighborhood")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<TopologyResponse> getServiceNeighborhood(
             @PathVariable UUID serviceId,
             @RequestParam(defaultValue = "1") int depth) {
@@ -77,7 +77,7 @@ public class TopologyController {
      * @return a 200 response with the topology stats
      */
     @GetMapping("/teams/{teamId}/topology/stats")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<TopologyStatsResponse> getEcosystemStats(@PathVariable UUID teamId) {
         return ResponseEntity.ok(topologyService.getEcosystemStats(teamId));
     }

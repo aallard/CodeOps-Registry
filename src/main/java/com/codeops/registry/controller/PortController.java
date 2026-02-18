@@ -25,9 +25,9 @@ import java.util.UUID;
 /**
  * REST controller for port allocation, range management, and conflict detection.
  *
- * <p>All endpoints require JWT authentication. Write operations require the {@code ARCHITECT}
- * role or the {@code registry:write} authority; read operations require the {@code ARCHITECT}
- * role or the {@code registry:read} authority; delete operations require the {@code ARCHITECT}
+ * <p>All endpoints require JWT authentication. Write operations require the {@code ADMIN}
+ * role or the {@code registry:write} authority; read operations require the {@code ADMIN}
+ * role or the {@code registry:read} authority; delete operations require the {@code ADMIN}
  * role or the {@code registry:delete} authority.</p>
  *
  * @see PortAllocationService
@@ -48,7 +48,7 @@ public class PortController {
      * @return a 201 response with the allocated port
      */
     @PostMapping("/ports/auto-allocate")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<PortAllocationResponse> autoAllocatePort(
             @Valid @RequestBody AutoAllocatePortRequest request) {
         UUID userId = SecurityUtils.getCurrentUserId();
@@ -64,7 +64,7 @@ public class PortController {
      * @return a 201 response with the allocated port
      */
     @PostMapping("/ports/allocate")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<PortAllocationResponse> manualAllocatePort(
             @Valid @RequestBody AllocatePortRequest request) {
         UUID userId = SecurityUtils.getCurrentUserId();
@@ -79,7 +79,7 @@ public class PortController {
      * @return a 204 response with no content
      */
     @DeleteMapping("/ports/{allocationId}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:delete')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:delete')")
     public ResponseEntity<Void> releasePort(@PathVariable UUID allocationId) {
         portAllocationService.releasePort(allocationId);
         return ResponseEntity.noContent().build();
@@ -93,7 +93,7 @@ public class PortController {
      * @return a 200 response with the list of port allocations
      */
     @GetMapping("/services/{serviceId}/ports")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<List<PortAllocationResponse>> getPortsForService(
             @PathVariable UUID serviceId,
             @RequestParam(required = false) String environment) {
@@ -108,7 +108,7 @@ public class PortController {
      * @return a 200 response with the list of port allocations
      */
     @GetMapping("/teams/{teamId}/ports")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<List<PortAllocationResponse>> getPortsForTeam(
             @PathVariable UUID teamId,
             @RequestParam String environment) {
@@ -123,7 +123,7 @@ public class PortController {
      * @return a 200 response with the port map
      */
     @GetMapping("/teams/{teamId}/ports/map")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<PortMapResponse> getPortMap(
             @PathVariable UUID teamId,
             @RequestParam String environment) {
@@ -139,7 +139,7 @@ public class PortController {
      * @return a 200 response with the port availability result
      */
     @GetMapping("/teams/{teamId}/ports/check")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<PortCheckResponse> checkPortAvailability(
             @PathVariable UUID teamId,
             @RequestParam int portNumber,
@@ -154,7 +154,7 @@ public class PortController {
      * @return a 200 response with the list of port conflicts
      */
     @GetMapping("/teams/{teamId}/ports/conflicts")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<List<PortConflictResponse>> detectPortConflicts(@PathVariable UUID teamId) {
         return ResponseEntity.ok(portAllocationService.detectConflicts(teamId));
     }
@@ -166,7 +166,7 @@ public class PortController {
      * @return a 200 response with the list of port ranges
      */
     @GetMapping("/teams/{teamId}/ports/ranges")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<List<PortRangeResponse>> getPortRanges(@PathVariable UUID teamId) {
         return ResponseEntity.ok(portAllocationService.getPortRanges(teamId));
     }
@@ -179,7 +179,7 @@ public class PortController {
      * @return a 200 response with the created or existing port ranges
      */
     @PostMapping("/teams/{teamId}/ports/ranges/seed")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<List<PortRangeResponse>> seedDefaultRanges(
             @PathVariable UUID teamId,
             @RequestParam(defaultValue = "local") String environment) {
@@ -194,7 +194,7 @@ public class PortController {
      * @return a 200 response with the updated port range
      */
     @PutMapping("/ports/ranges/{rangeId}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<PortRangeResponse> updatePortRange(
             @PathVariable UUID rangeId,
             @Valid @RequestBody UpdatePortRangeRequest request) {

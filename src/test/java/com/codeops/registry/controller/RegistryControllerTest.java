@@ -80,8 +80,8 @@ class RegistryControllerTest {
                 .compact();
     }
 
-    private String architectToken() {
-        return buildToken("ARCHITECT");
+    private String adminToken() {
+        return buildToken("ADMIN");
     }
 
     private String memberToken() {
@@ -188,7 +188,7 @@ class RegistryControllerTest {
     }
 
     // ──────────────────────────────────────────────
-    // Happy path tests — ARCHITECT role
+    // Happy path tests — ADMIN role
     // ──────────────────────────────────────────────
 
     @Test
@@ -201,7 +201,7 @@ class RegistryControllerTest {
                 null, null, null, null, null, null, null, null, null, null, null));
 
         mockMvc.perform(post("/api/v1/registry/teams/{teamId}/services", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -216,7 +216,7 @@ class RegistryControllerTest {
                 .thenReturn(new PageResponse<>(List.of(sampleServiceResponse()), 0, 20, 1, 1, true));
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/services", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content[0].name").value("Test Service"))
@@ -230,7 +230,7 @@ class RegistryControllerTest {
                 .thenReturn(new PageResponse<>(List.of(sampleServiceResponse()), 0, 20, 1, 1, true));
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/services", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("status", "ACTIVE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].status").value("ACTIVE"));
@@ -243,7 +243,7 @@ class RegistryControllerTest {
                 .thenReturn(new PageResponse<>(List.of(sampleServiceResponse()), 0, 20, 1, 1, true));
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/services", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("type", "SPRING_BOOT_API"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].serviceType").value("SPRING_BOOT_API"));
@@ -256,7 +256,7 @@ class RegistryControllerTest {
                 .thenReturn(new PageResponse<>(List.of(sampleServiceResponse()), 0, 20, 1, 1, true));
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/services", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("search", "test"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray());
@@ -268,7 +268,7 @@ class RegistryControllerTest {
                 .thenReturn(sampleServiceResponse());
 
         mockMvc.perform(get("/api/v1/registry/services/{serviceId}", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(SERVICE_ID.toString()))
                 .andExpect(jsonPath("$.name").value("Test Service"));
@@ -281,7 +281,7 @@ class RegistryControllerTest {
                 .thenThrow(new NotFoundException("ServiceRegistration", missingId));
 
         mockMvc.perform(get("/api/v1/registry/services/{serviceId}", missingId)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNotFound());
     }
 
@@ -294,7 +294,7 @@ class RegistryControllerTest {
                 "Updated Name", null, null, null, null, null, null, null, null, null));
 
         mockMvc.perform(put("/api/v1/registry/services/{serviceId}", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk());
@@ -310,7 +310,7 @@ class RegistryControllerTest {
                 "Updated Name", null, null, null, null, null, null, null, null, null));
 
         mockMvc.perform(put("/api/v1/registry/services/{serviceId}", missingId)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isNotFound());
@@ -321,7 +321,7 @@ class RegistryControllerTest {
         doNothing().when(serviceRegistryService).deleteService(SERVICE_ID);
 
         mockMvc.perform(delete("/api/v1/registry/services/{serviceId}", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNoContent());
     }
 
@@ -331,7 +331,7 @@ class RegistryControllerTest {
                 .when(serviceRegistryService).deleteService(SERVICE_ID);
 
         mockMvc.perform(delete("/api/v1/registry/services/{serviceId}", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -343,7 +343,7 @@ class RegistryControllerTest {
         String body = objectMapper.writeValueAsString(new UpdateServiceStatusRequest(ServiceStatus.INACTIVE));
 
         mockMvc.perform(patch("/api/v1/registry/services/{serviceId}/status", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk());
@@ -352,7 +352,7 @@ class RegistryControllerTest {
     @Test
     void updateServiceStatus_invalidBody_returns400() throws Exception {
         mockMvc.perform(patch("/api/v1/registry/services/{serviceId}/status", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"status\":null}"))
                 .andExpect(status().isBadRequest());
@@ -366,7 +366,7 @@ class RegistryControllerTest {
         String body = objectMapper.writeValueAsString(new CloneServiceRequest("Cloned Service", null));
 
         mockMvc.perform(post("/api/v1/registry/services/{serviceId}/clone", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated());
@@ -381,7 +381,7 @@ class RegistryControllerTest {
         String body = objectMapper.writeValueAsString(new CloneServiceRequest("Cloned Service", null));
 
         mockMvc.perform(post("/api/v1/registry/services/{serviceId}/clone", missingId)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isNotFound());
@@ -395,7 +395,7 @@ class RegistryControllerTest {
                 .thenReturn(identity);
 
         mockMvc.perform(get("/api/v1/registry/services/{serviceId}/identity", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.service.name").value("Test Service"))
                 .andExpect(jsonPath("$.ports").isArray());
@@ -409,7 +409,7 @@ class RegistryControllerTest {
                 .thenReturn(identity);
 
         mockMvc.perform(get("/api/v1/registry/services/{serviceId}/identity", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("environment", "local"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.service").exists());
@@ -421,7 +421,7 @@ class RegistryControllerTest {
                 .thenReturn(sampleHealthResponse());
 
         mockMvc.perform(post("/api/v1/registry/services/{serviceId}/health", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.healthStatus").value("UP"))
                 .andExpect(jsonPath("$.responseTimeMs").value(42));
@@ -433,7 +433,7 @@ class RegistryControllerTest {
                 .thenReturn(List.of(sampleHealthResponse()));
 
         mockMvc.perform(post("/api/v1/registry/teams/{teamId}/services/health", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].healthStatus").value("UP"));
@@ -445,7 +445,7 @@ class RegistryControllerTest {
                 .thenReturn(sampleServiceResponse());
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/services/by-slug/{slug}", TEAM_ID, "test-service")
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.slug").value("test-service"));
     }
@@ -462,7 +462,7 @@ class RegistryControllerTest {
                 null, null, null, null, null, null, null, null, null, null, null));
 
         mockMvc.perform(post("/api/v1/registry/teams/{teamId}/services", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest());
@@ -472,7 +472,7 @@ class RegistryControllerTest {
     void cloneService_invalidBody_returns400() throws Exception {
         // Missing required field: newName
         mockMvc.perform(post("/api/v1/registry/services/{serviceId}/clone", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"newName\":\"\"}"))
                 .andExpect(status().isBadRequest());

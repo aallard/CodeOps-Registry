@@ -64,8 +64,8 @@ class HealthManagementControllerTest {
                 .compact();
     }
 
-    private String architectToken() {
-        return buildToken("ARCHITECT");
+    private String adminToken() {
+        return buildToken("ADMIN");
     }
 
     private String memberToken() {
@@ -146,7 +146,7 @@ class HealthManagementControllerTest {
                 .thenReturn(sampleTeamHealthSummary());
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/health/summary", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.teamId").value(TEAM_ID.toString()))
                 .andExpect(jsonPath("$.totalServices").value(10))
@@ -165,7 +165,7 @@ class HealthManagementControllerTest {
                 .thenReturn(sampleTeamHealthSummary());
 
         mockMvc.perform(post("/api/v1/registry/teams/{teamId}/health/check", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.teamId").value(TEAM_ID.toString()))
                 .andExpect(jsonPath("$.overallHealth").value("DEGRADED"));
@@ -186,7 +186,7 @@ class HealthManagementControllerTest {
                 .thenReturn(List.of(unhealthy));
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/health/unhealthy", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].healthStatus").value("DOWN"))
@@ -208,7 +208,7 @@ class HealthManagementControllerTest {
                 .thenReturn(List.of(neverChecked));
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/health/never-checked", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].healthStatus").value("UNKNOWN"))
@@ -225,7 +225,7 @@ class HealthManagementControllerTest {
                 .thenReturn(sampleSolutionHealth());
 
         mockMvc.perform(post("/api/v1/registry/solutions/{solutionId}/health/check", SOLUTION_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.solutionId").value(SOLUTION_ID.toString()))
                 .andExpect(jsonPath("$.solutionName").value("Test Solution"))
@@ -240,7 +240,7 @@ class HealthManagementControllerTest {
                 .thenThrow(new NotFoundException("Solution", missingId));
 
         mockMvc.perform(post("/api/v1/registry/solutions/{solutionId}/health/check", missingId)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNotFound());
     }
 
@@ -254,7 +254,7 @@ class HealthManagementControllerTest {
                 .thenReturn(sampleServiceHealth());
 
         mockMvc.perform(get("/api/v1/registry/services/{serviceId}/health/cached", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.serviceId").value(SERVICE_ID.toString()))
                 .andExpect(jsonPath("$.healthStatus").value("UP"))
@@ -268,7 +268,7 @@ class HealthManagementControllerTest {
                 .thenThrow(new NotFoundException("ServiceRegistration", missingId));
 
         mockMvc.perform(get("/api/v1/registry/services/{serviceId}/health/cached", missingId)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNotFound());
     }
 }

@@ -72,8 +72,8 @@ class RouteControllerTest {
                 .compact();
     }
 
-    private String architectToken() {
-        return buildToken("ARCHITECT");
+    private String adminToken() {
+        return buildToken("ADMIN");
     }
 
     private String memberToken() {
@@ -152,7 +152,7 @@ class RouteControllerTest {
                 SERVICE_ID, null, "/api/v1/test", "GET,POST", "local", "Test route"));
 
         mockMvc.perform(post("/api/v1/registry/routes")
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -164,7 +164,7 @@ class RouteControllerTest {
     void createRoute_invalidBody_returns400() throws Exception {
         // Missing required fields: serviceId, routePrefix, environment
         mockMvc.perform(post("/api/v1/registry/routes")
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"serviceId\":null}"))
                 .andExpect(status().isBadRequest());
@@ -180,7 +180,7 @@ class RouteControllerTest {
                 SERVICE_ID, null, "/api/v1/test", "GET", "local", null));
 
         mockMvc.perform(post("/api/v1/registry/routes")
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest());
@@ -195,7 +195,7 @@ class RouteControllerTest {
         doNothing().when(apiRouteService).deleteRoute(ROUTE_ID);
 
         mockMvc.perform(delete("/api/v1/registry/routes/{routeId}", ROUTE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNoContent());
     }
 
@@ -206,7 +206,7 @@ class RouteControllerTest {
                 .when(apiRouteService).deleteRoute(missingId);
 
         mockMvc.perform(delete("/api/v1/registry/routes/{routeId}", missingId)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNotFound());
     }
 
@@ -220,7 +220,7 @@ class RouteControllerTest {
                 .thenReturn(List.of(sampleRouteResponse()));
 
         mockMvc.perform(get("/api/v1/registry/services/{serviceId}/routes", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].routePrefix").value("/api/v1/test"));
@@ -233,7 +233,7 @@ class RouteControllerTest {
 
         mockMvc.perform(get("/api/v1/registry/services/{gatewayServiceId}/routes/gateway",
                         GATEWAY_SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("environment", "local"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
@@ -244,7 +244,7 @@ class RouteControllerTest {
     void getRoutesForGateway_missingEnvironment_returns400() throws Exception {
         mockMvc.perform(get("/api/v1/registry/services/{gatewayServiceId}/routes/gateway",
                         GATEWAY_SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -259,7 +259,7 @@ class RouteControllerTest {
                 .thenReturn(check);
 
         mockMvc.perform(get("/api/v1/registry/routes/check")
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("gatewayServiceId", GATEWAY_SERVICE_ID.toString())
                         .param("environment", "local")
                         .param("routePrefix", "/api/v1/test"))
@@ -276,7 +276,7 @@ class RouteControllerTest {
                 .thenReturn(check);
 
         mockMvc.perform(get("/api/v1/registry/routes/check")
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("gatewayServiceId", GATEWAY_SERVICE_ID.toString())
                         .param("environment", "local")
                         .param("routePrefix", "/api/v1/test"))

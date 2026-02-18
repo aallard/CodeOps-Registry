@@ -76,8 +76,8 @@ class DependencyControllerTest {
                 .compact();
     }
 
-    private String architectToken() {
-        return buildToken("ARCHITECT");
+    private String adminToken() {
+        return buildToken("ADMIN");
     }
 
     private String memberToken() {
@@ -162,7 +162,7 @@ class DependencyControllerTest {
                 SERVICE_ID, TARGET_SERVICE_ID, DependencyType.HTTP_REST, "REST call", true, "/api/data"));
 
         mockMvc.perform(post("/api/v1/registry/dependencies")
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -174,7 +174,7 @@ class DependencyControllerTest {
     void createDependency_invalidBody_returns400() throws Exception {
         // Missing required fields: sourceServiceId, targetServiceId, dependencyType
         mockMvc.perform(post("/api/v1/registry/dependencies")
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"sourceServiceId\":null}"))
                 .andExpect(status().isBadRequest());
@@ -189,7 +189,7 @@ class DependencyControllerTest {
                 SERVICE_ID, SERVICE_ID, DependencyType.HTTP_REST, null, null, null));
 
         mockMvc.perform(post("/api/v1/registry/dependencies")
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest());
@@ -204,7 +204,7 @@ class DependencyControllerTest {
                 SERVICE_ID, TARGET_SERVICE_ID, DependencyType.HTTP_REST, null, null, null));
 
         mockMvc.perform(post("/api/v1/registry/dependencies")
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest());
@@ -219,7 +219,7 @@ class DependencyControllerTest {
                 SERVICE_ID, TARGET_SERVICE_ID, DependencyType.HTTP_REST, null, null, null));
 
         mockMvc.perform(post("/api/v1/registry/dependencies")
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest());
@@ -230,7 +230,7 @@ class DependencyControllerTest {
         doNothing().when(dependencyGraphService).removeDependency(DEPENDENCY_ID);
 
         mockMvc.perform(delete("/api/v1/registry/dependencies/{dependencyId}", DEPENDENCY_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNoContent());
     }
 
@@ -241,7 +241,7 @@ class DependencyControllerTest {
                 .when(dependencyGraphService).removeDependency(missingId);
 
         mockMvc.perform(delete("/api/v1/registry/dependencies/{dependencyId}", missingId)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNotFound());
     }
 
@@ -256,7 +256,7 @@ class DependencyControllerTest {
                 .thenReturn(graph);
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/dependencies/graph", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.teamId").value(TEAM_ID.toString()))
                 .andExpect(jsonPath("$.nodes").isArray())
@@ -271,7 +271,7 @@ class DependencyControllerTest {
                 .thenReturn(impact);
 
         mockMvc.perform(get("/api/v1/registry/services/{serviceId}/dependencies/impact", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sourceServiceId").value(SERVICE_ID.toString()))
                 .andExpect(jsonPath("$.totalAffected").value(0));
@@ -284,7 +284,7 @@ class DependencyControllerTest {
                 .thenThrow(new NotFoundException("ServiceRegistration", missingId));
 
         mockMvc.perform(get("/api/v1/registry/services/{serviceId}/dependencies/impact", missingId)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNotFound());
     }
 
@@ -295,7 +295,7 @@ class DependencyControllerTest {
                         sampleNodeResponse(TARGET_SERVICE_ID, "API")));
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/dependencies/startup-order", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].name").value("Database"))
@@ -308,7 +308,7 @@ class DependencyControllerTest {
                 .thenReturn(List.of());
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/dependencies/cycles", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$").isEmpty());
@@ -320,7 +320,7 @@ class DependencyControllerTest {
                 .thenReturn(List.of(SERVICE_ID, TARGET_SERVICE_ID));
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/dependencies/cycles", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0]").value(SERVICE_ID.toString()))
                 .andExpect(jsonPath("$[1]").value(TARGET_SERVICE_ID.toString()));

@@ -28,7 +28,7 @@ codeops:
     allowed-origins: http://localhost:3000,http://localhost:3200,http://localhost:5173
 
   services:
-    server-url: ${CODEOPS_SERVER_URL:http://localhost:8090}
+    server-url: ${CODEOPS_SERVER_URL:http://localhost:8095}
     vault-url: ${CODEOPS_VAULT_URL:http://localhost:8097}
     logger-url: ${CODEOPS_LOGGER_URL:http://localhost:8098}
 

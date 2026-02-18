@@ -75,8 +75,8 @@ class PortControllerTest {
                 .compact();
     }
 
-    private String architectToken() {
-        return buildToken("ARCHITECT");
+    private String adminToken() {
+        return buildToken("ADMIN");
     }
 
     private String memberToken() {
@@ -160,7 +160,7 @@ class PortControllerTest {
                 SERVICE_ID, "local", PortType.HTTP_API, null));
 
         mockMvc.perform(post("/api/v1/registry/ports/auto-allocate")
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -172,7 +172,7 @@ class PortControllerTest {
     void autoAllocatePort_invalidBody_returns400() throws Exception {
         // Missing required fields: serviceId, environment, portType
         mockMvc.perform(post("/api/v1/registry/ports/auto-allocate")
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"serviceId\":null}"))
                 .andExpect(status().isBadRequest());
@@ -187,7 +187,7 @@ class PortControllerTest {
                 SERVICE_ID, "local", PortType.HTTP_API, null));
 
         mockMvc.perform(post("/api/v1/registry/ports/auto-allocate")
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest());
@@ -206,7 +206,7 @@ class PortControllerTest {
                 SERVICE_ID, "local", PortType.HTTP_API, 8080, null, null));
 
         mockMvc.perform(post("/api/v1/registry/ports/allocate")
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -222,7 +222,7 @@ class PortControllerTest {
                 SERVICE_ID, "local", PortType.HTTP_API, 8080, null, null));
 
         mockMvc.perform(post("/api/v1/registry/ports/allocate")
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest());
@@ -237,7 +237,7 @@ class PortControllerTest {
         doNothing().when(portAllocationService).releasePort(ALLOCATION_ID);
 
         mockMvc.perform(delete("/api/v1/registry/ports/{allocationId}", ALLOCATION_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNoContent());
     }
 
@@ -248,7 +248,7 @@ class PortControllerTest {
                 .when(portAllocationService).releasePort(missingId);
 
         mockMvc.perform(delete("/api/v1/registry/ports/{allocationId}", missingId)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNotFound());
     }
 
@@ -262,7 +262,7 @@ class PortControllerTest {
                 .thenReturn(List.of(samplePortResponse()));
 
         mockMvc.perform(get("/api/v1/registry/services/{serviceId}/ports", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].portNumber").value(8080));
@@ -274,7 +274,7 @@ class PortControllerTest {
                 .thenReturn(List.of(samplePortResponse()));
 
         mockMvc.perform(get("/api/v1/registry/services/{serviceId}/ports", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("environment", "local"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].environment").value("local"));
@@ -286,7 +286,7 @@ class PortControllerTest {
                 .thenReturn(List.of(samplePortResponse()));
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/ports", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("environment", "local"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
@@ -295,7 +295,7 @@ class PortControllerTest {
     @Test
     void getPortsForTeam_missingEnvironment_returns400() throws Exception {
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/ports", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -310,7 +310,7 @@ class PortControllerTest {
                 .thenReturn(portMap);
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/ports/map", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("environment", "local"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.teamId").value(TEAM_ID.toString()))
@@ -324,7 +324,7 @@ class PortControllerTest {
                 .thenReturn(check);
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/ports/check", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("portNumber", "8080")
                         .param("environment", "local"))
                 .andExpect(status().isOk())
@@ -335,7 +335,7 @@ class PortControllerTest {
     @Test
     void checkPortAvailability_missingParams_returns400() throws Exception {
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/ports/check", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -345,7 +345,7 @@ class PortControllerTest {
                 .thenReturn(List.of());
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/ports/conflicts", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
@@ -360,7 +360,7 @@ class PortControllerTest {
                 .thenReturn(List.of(sampleRangeResponse()));
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/ports/ranges", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].portType").value("HTTP_API"));
@@ -372,7 +372,7 @@ class PortControllerTest {
                 .thenReturn(List.of(sampleRangeResponse()));
 
         mockMvc.perform(post("/api/v1/registry/teams/{teamId}/ports/ranges/seed", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
@@ -383,7 +383,7 @@ class PortControllerTest {
                 .thenReturn(List.of(sampleRangeResponse()));
 
         mockMvc.perform(post("/api/v1/registry/teams/{teamId}/ports/ranges/seed", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("environment", "dev"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
@@ -397,7 +397,7 @@ class PortControllerTest {
         String body = objectMapper.writeValueAsString(new UpdatePortRangeRequest(8080, 8199, null));
 
         mockMvc.perform(put("/api/v1/registry/ports/ranges/{rangeId}", RANGE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())

@@ -20,9 +20,9 @@ import java.util.UUID;
 /**
  * REST controller for API route registration and collision detection.
  *
- * <p>All endpoints require JWT authentication. Write operations require the {@code ARCHITECT}
- * role or the {@code registry:write} authority; read operations require the {@code ARCHITECT}
- * role or the {@code registry:read} authority; delete operations require the {@code ARCHITECT}
+ * <p>All endpoints require JWT authentication. Write operations require the {@code ADMIN}
+ * role or the {@code registry:write} authority; read operations require the {@code ADMIN}
+ * role or the {@code registry:read} authority; delete operations require the {@code ADMIN}
  * role or the {@code registry:delete} authority.</p>
  *
  * @see ApiRouteService
@@ -43,7 +43,7 @@ public class RouteController {
      * @return a 201 response with the created route
      */
     @PostMapping("/routes")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<ApiRouteResponse> createRoute(
             @Valid @RequestBody CreateRouteRequest request) {
         UUID userId = SecurityUtils.getCurrentUserId();
@@ -58,7 +58,7 @@ public class RouteController {
      * @return a 204 response with no content
      */
     @DeleteMapping("/routes/{routeId}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:delete')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:delete')")
     public ResponseEntity<Void> deleteRoute(@PathVariable UUID routeId) {
         apiRouteService.deleteRoute(routeId);
         return ResponseEntity.noContent().build();
@@ -71,7 +71,7 @@ public class RouteController {
      * @return a 200 response with the list of routes
      */
     @GetMapping("/services/{serviceId}/routes")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<List<ApiRouteResponse>> getRoutesForService(
             @PathVariable UUID serviceId) {
         return ResponseEntity.ok(apiRouteService.getRoutesForService(serviceId));
@@ -85,7 +85,7 @@ public class RouteController {
      * @return a 200 response with the list of gateway routes
      */
     @GetMapping("/services/{gatewayServiceId}/routes/gateway")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<List<ApiRouteResponse>> getRoutesForGateway(
             @PathVariable UUID gatewayServiceId,
             @RequestParam String environment) {
@@ -101,7 +101,7 @@ public class RouteController {
      * @return a 200 response with the availability check result
      */
     @GetMapping("/routes/check")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<RouteCheckResponse> checkRouteAvailability(
             @RequestParam UUID gatewayServiceId,
             @RequestParam String environment,

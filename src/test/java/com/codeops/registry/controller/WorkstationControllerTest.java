@@ -77,8 +77,8 @@ class WorkstationControllerTest {
                 .compact();
     }
 
-    private String architectToken() {
-        return buildToken("ARCHITECT");
+    private String adminToken() {
+        return buildToken("ADMIN");
     }
 
     private String memberToken() {
@@ -172,7 +172,7 @@ class WorkstationControllerTest {
                 SOLUTION_ID, List.of(SERVICE_ID), true));
 
         mockMvc.perform(post("/api/v1/registry/teams/{teamId}/workstations", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -185,7 +185,7 @@ class WorkstationControllerTest {
     void createProfile_invalidBody_returns400() throws Exception {
         // Missing required fields: teamId, name
         mockMvc.perform(post("/api/v1/registry/teams/{teamId}/workstations", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"teamId\":null,\"name\":null}"))
                 .andExpect(status().isBadRequest());
@@ -202,7 +202,7 @@ class WorkstationControllerTest {
                 TEAM_ID, "Dev Workstation", null, null, List.of(SERVICE_ID), false));
 
         mockMvc.perform(post("/api/v1/registry/teams/{teamId}/workstations", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest());
@@ -218,7 +218,7 @@ class WorkstationControllerTest {
                 .thenReturn(List.of(sampleProfileResponse()));
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/workstations", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].name").value("Dev Workstation"));
@@ -230,7 +230,7 @@ class WorkstationControllerTest {
                 .thenReturn(sampleProfileResponse());
 
         mockMvc.perform(get("/api/v1/registry/workstations/{profileId}", PROFILE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(PROFILE_ID.toString()))
                 .andExpect(jsonPath("$.name").value("Dev Workstation"))
@@ -244,7 +244,7 @@ class WorkstationControllerTest {
                 .thenThrow(new NotFoundException("WorkstationProfile", missingId));
 
         mockMvc.perform(get("/api/v1/registry/workstations/{profileId}", missingId)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNotFound());
     }
 
@@ -268,7 +268,7 @@ class WorkstationControllerTest {
                 "Updated Workstation", "Updated description", null, null));
 
         mockMvc.perform(put("/api/v1/registry/workstations/{profileId}", PROFILE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
@@ -287,7 +287,7 @@ class WorkstationControllerTest {
                 "Updated", null, null, null));
 
         mockMvc.perform(put("/api/v1/registry/workstations/{profileId}", missingId)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isNotFound());
@@ -302,7 +302,7 @@ class WorkstationControllerTest {
         doNothing().when(workstationProfileService).deleteProfile(PROFILE_ID);
 
         mockMvc.perform(delete("/api/v1/registry/workstations/{profileId}", PROFILE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNoContent());
     }
 
@@ -313,7 +313,7 @@ class WorkstationControllerTest {
                 .when(workstationProfileService).deleteProfile(missingId);
 
         mockMvc.perform(delete("/api/v1/registry/workstations/{profileId}", missingId)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNotFound());
     }
 
@@ -327,7 +327,7 @@ class WorkstationControllerTest {
                 .thenReturn(sampleProfileResponse());
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/workstations/default", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isDefault").value(true))
                 .andExpect(jsonPath("$.name").value("Dev Workstation"));
@@ -340,7 +340,7 @@ class WorkstationControllerTest {
                 .thenThrow(new NotFoundException("WorkstationProfile", missingTeamId));
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/workstations/default", missingTeamId)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNotFound());
     }
 
@@ -350,7 +350,7 @@ class WorkstationControllerTest {
                 .thenReturn(sampleProfileResponse());
 
         mockMvc.perform(patch("/api/v1/registry/workstations/{profileId}/set-default", PROFILE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isDefault").value(true));
     }
@@ -367,7 +367,7 @@ class WorkstationControllerTest {
 
         mockMvc.perform(post("/api/v1/registry/solutions/{solutionId}/workstations/from-solution",
                         SOLUTION_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("teamId", TEAM_ID.toString()))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("Dev Workstation"))
@@ -378,7 +378,7 @@ class WorkstationControllerTest {
     void createFromSolution_missingTeamId_returns400() throws Exception {
         mockMvc.perform(post("/api/v1/registry/solutions/{solutionId}/workstations/from-solution",
                         SOLUTION_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -391,7 +391,7 @@ class WorkstationControllerTest {
 
         mockMvc.perform(post("/api/v1/registry/solutions/{solutionId}/workstations/from-solution",
                         missingId)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("teamId", TEAM_ID.toString()))
                 .andExpect(status().isNotFound());
     }
@@ -407,7 +407,7 @@ class WorkstationControllerTest {
 
         mockMvc.perform(post("/api/v1/registry/workstations/{profileId}/refresh-startup-order",
                         PROFILE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.startupOrder").isArray());
     }
@@ -420,7 +420,7 @@ class WorkstationControllerTest {
 
         mockMvc.perform(post("/api/v1/registry/workstations/{profileId}/refresh-startup-order",
                         missingId)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNotFound());
     }
 }

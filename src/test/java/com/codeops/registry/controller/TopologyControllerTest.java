@@ -63,8 +63,8 @@ class TopologyControllerTest {
                 .compact();
     }
 
-    private String architectToken() {
-        return buildToken("ARCHITECT");
+    private String adminToken() {
+        return buildToken("ADMIN");
     }
 
     private String memberToken() {
@@ -148,7 +148,7 @@ class TopologyControllerTest {
                 .thenReturn(sampleTopologyResponse());
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/topology", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.teamId").value(TEAM_ID.toString()))
                 .andExpect(jsonPath("$.nodes").isArray())
@@ -165,7 +165,7 @@ class TopologyControllerTest {
                 .thenReturn(sampleTopologyResponse());
 
         mockMvc.perform(get("/api/v1/registry/solutions/{solutionId}/topology", SOLUTION_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nodes").isArray())
                 .andExpect(jsonPath("$.edges").isArray());
@@ -178,7 +178,7 @@ class TopologyControllerTest {
                 .thenThrow(new NotFoundException("Solution", missingId));
 
         mockMvc.perform(get("/api/v1/registry/solutions/{solutionId}/topology", missingId)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNotFound());
     }
 
@@ -188,7 +188,7 @@ class TopologyControllerTest {
                 .thenReturn(sampleTopologyResponse());
 
         mockMvc.perform(get("/api/v1/registry/services/{serviceId}/topology/neighborhood", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("depth", "2"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nodes").isArray())
@@ -201,7 +201,7 @@ class TopologyControllerTest {
                 .thenReturn(sampleTopologyResponse());
 
         mockMvc.perform(get("/api/v1/registry/services/{serviceId}/topology/neighborhood", SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nodes").isArray());
     }
@@ -213,7 +213,7 @@ class TopologyControllerTest {
                 .thenThrow(new NotFoundException("ServiceRegistration", missingId));
 
         mockMvc.perform(get("/api/v1/registry/services/{serviceId}/topology/neighborhood", missingId)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNotFound());
     }
 
@@ -223,7 +223,7 @@ class TopologyControllerTest {
                 .thenReturn(sampleStatsResponse());
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/topology/stats", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalServices").value(5))
                 .andExpect(jsonPath("$.totalDependencies").value(8))

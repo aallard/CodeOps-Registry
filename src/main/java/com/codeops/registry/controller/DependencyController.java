@@ -21,9 +21,9 @@ import java.util.UUID;
 /**
  * REST controller for dependency graph management, impact analysis, and cycle detection.
  *
- * <p>All endpoints require JWT authentication. Write operations require the {@code ARCHITECT}
- * role or the {@code registry:write} authority; read operations require the {@code ARCHITECT}
- * role or the {@code registry:read} authority; delete operations require the {@code ARCHITECT}
+ * <p>All endpoints require JWT authentication. Write operations require the {@code ADMIN}
+ * role or the {@code registry:write} authority; read operations require the {@code ADMIN}
+ * role or the {@code registry:read} authority; delete operations require the {@code ADMIN}
  * role or the {@code registry:delete} authority.</p>
  *
  * @see DependencyGraphService
@@ -44,7 +44,7 @@ public class DependencyController {
      * @return a 201 response with the created dependency
      */
     @PostMapping("/dependencies")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<ServiceDependencyResponse> createDependency(
             @Valid @RequestBody CreateDependencyRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -58,7 +58,7 @@ public class DependencyController {
      * @return a 204 response with no content
      */
     @DeleteMapping("/dependencies/{dependencyId}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:delete')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:delete')")
     public ResponseEntity<Void> removeDependency(@PathVariable UUID dependencyId) {
         dependencyGraphService.removeDependency(dependencyId);
         return ResponseEntity.noContent().build();
@@ -71,7 +71,7 @@ public class DependencyController {
      * @return a 200 response with the dependency graph (nodes and edges)
      */
     @GetMapping("/teams/{teamId}/dependencies/graph")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<DependencyGraphResponse> getDependencyGraph(@PathVariable UUID teamId) {
         return ResponseEntity.ok(dependencyGraphService.getDependencyGraph(teamId));
     }
@@ -83,7 +83,7 @@ public class DependencyController {
      * @return a 200 response with the impact analysis
      */
     @GetMapping("/services/{serviceId}/dependencies/impact")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<ImpactAnalysisResponse> getImpactAnalysis(@PathVariable UUID serviceId) {
         return ResponseEntity.ok(dependencyGraphService.getImpactAnalysis(serviceId));
     }
@@ -95,7 +95,7 @@ public class DependencyController {
      * @return a 200 response with the startup order (list of dependency nodes)
      */
     @GetMapping("/teams/{teamId}/dependencies/startup-order")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<List<DependencyNodeResponse>> getStartupOrder(@PathVariable UUID teamId) {
         return ResponseEntity.ok(dependencyGraphService.getStartupOrder(teamId));
     }
@@ -107,7 +107,7 @@ public class DependencyController {
      * @return a 200 response with the list of service IDs participating in cycles
      */
     @GetMapping("/teams/{teamId}/dependencies/cycles")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<List<UUID>> detectCycles(@PathVariable UUID teamId) {
         return ResponseEntity.ok(dependencyGraphService.detectCycles(teamId));
     }

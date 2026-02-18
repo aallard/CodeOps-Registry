@@ -19,9 +19,9 @@ import java.util.UUID;
  *
  * <p>Generates Docker Compose, application.yml, and Claude Code context headers from
  * registry data. All endpoints require JWT authentication. Write operations require the
- * {@code ARCHITECT} role or the {@code registry:write} authority; read operations require
- * the {@code ARCHITECT} role or the {@code registry:read} authority; delete operations
- * require the {@code ARCHITECT} role or the {@code registry:delete} authority.</p>
+ * {@code ADMIN} role or the {@code registry:write} authority; read operations require
+ * the {@code ADMIN} role or the {@code registry:read} authority; delete operations
+ * require the {@code ADMIN} role or the {@code registry:delete} authority.</p>
  *
  * @see ConfigEngineService
  */
@@ -46,7 +46,7 @@ public class ConfigController {
      * @return a 200 response with the generated config template
      */
     @PostMapping("/services/{serviceId}/config/generate")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<ConfigTemplateResponse> generateConfig(
             @PathVariable UUID serviceId,
             @RequestParam ConfigTemplateType type,
@@ -70,7 +70,7 @@ public class ConfigController {
      * @return a 200 response with the list of generated config templates
      */
     @PostMapping("/services/{serviceId}/config/generate-all")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<List<ConfigTemplateResponse>> generateAllConfigs(
             @PathVariable UUID serviceId,
             @RequestParam(defaultValue = "local") String environment) {
@@ -85,7 +85,7 @@ public class ConfigController {
      * @return a 200 response with the generated docker-compose config template
      */
     @PostMapping("/solutions/{solutionId}/config/docker-compose")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<ConfigTemplateResponse> generateSolutionDockerCompose(
             @PathVariable UUID solutionId,
             @RequestParam(defaultValue = "local") String environment) {
@@ -102,7 +102,7 @@ public class ConfigController {
      * @return a 200 response with the config template
      */
     @GetMapping("/services/{serviceId}/config")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<ConfigTemplateResponse> getTemplate(
             @PathVariable UUID serviceId,
             @RequestParam ConfigTemplateType type,
@@ -117,7 +117,7 @@ public class ConfigController {
      * @return a 200 response with the list of config templates
      */
     @GetMapping("/services/{serviceId}/config/all")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<List<ConfigTemplateResponse>> getTemplatesForService(
             @PathVariable UUID serviceId) {
         return ResponseEntity.ok(configEngineService.getTemplatesForService(serviceId));
@@ -130,7 +130,7 @@ public class ConfigController {
      * @return a 204 response with no content
      */
     @DeleteMapping("/config/{templateId}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:delete')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:delete')")
     public ResponseEntity<Void> deleteTemplate(@PathVariable UUID templateId) {
         configEngineService.deleteTemplate(templateId);
         return ResponseEntity.noContent().build();

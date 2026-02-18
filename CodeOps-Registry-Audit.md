@@ -70,7 +70,7 @@ Audit Timestamp:     2026-02-17T20:33:53Z
 ./src/test/java/com/codeops/registry/ (12 test files)
 ```
 
-Single-module Maven project. Source at `src/main/java/com/codeops/registry/`. Standard layered architecture: `config`, `dto`, `entity`, `exception`, `repository`, `security`, `service`, `util`. **No controllers exist yet** — services are implemented but not yet exposed via REST endpoints.
+Single-module Maven project. Source at `src/main/java/com/codeops/registry/`. Standard layered architecture: `config`, `controller`, `dto`, `entity`, `exception`, `repository`, `security`, `service`, `util`. 10 controllers expose 77 secured + 1 public health endpoint.
 
 ---
 
@@ -111,7 +111,7 @@ Package: mvn clean package -DskipTests
 ## 4. Configuration & Infrastructure Summary
 
 - **`application.yml`** — Default profile: `dev`, server port: `8096`
-- **`application-dev.yml`** — PostgreSQL at `localhost:5435/codeops_registry`, `ddl-auto: update`, SQL logging enabled. JWT shared secret with CodeOps-Server (dev default). CORS: localhost:3000,3200,5173. Service URLs: CodeOps-Server (8090), Vault (8097), Logger (8098).
+- **`application-dev.yml`** — PostgreSQL at `localhost:5435/codeops_registry`, `ddl-auto: update`, SQL logging enabled. JWT shared secret with CodeOps-Server (dev default). CORS: localhost:3000,3200,5173. Service URLs: CodeOps-Server (8095), Vault (8097), Logger (8098).
 - **`application-prod.yml`** — All secrets from env vars. `ddl-auto: validate`. Logging at INFO/WARN.
 - **`application-test.yml`** — H2 in-memory with `MODE=PostgreSQL`, `ddl-auto: create-drop`. Hardcoded test JWT secret.
 - **`application-integration.yml`** — PostgreSQL driver (Testcontainers provides URL), `ddl-auto: create-drop`.
@@ -124,7 +124,7 @@ Package: mvn clean package -DskipTests
 Database:        PostgreSQL, localhost:5435, codeops_registry
 Cache:           None
 Message Broker:  None
-External APIs:   CodeOps-Server (8090), CodeOps-Vault (8097), CodeOps-Logger (8098) — URLs configured but not yet called
+External APIs:   CodeOps-Server (8095), CodeOps-Vault (8097), CodeOps-Logger (8098) — URLs configured but not yet called
 Cloud Services:  None
 ```
 
@@ -811,7 +811,10 @@ Methods:
 **Token claims extracted:** `sub` (user UUID), `email`, `roles` (list), `teamIds` (list), `teamRoles` (map<teamId, role>)
 
 **Authorization Model:**
-- `@EnableMethodSecurity` is enabled but **no `@PreAuthorize` annotations exist yet** on any controller or service method
+- `@EnableMethodSecurity` is enabled. All 10 controllers use `@PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read|write|delete')")` on every endpoint (77 total secured endpoints)
+- Write endpoints require `hasRole('ADMIN') or hasAuthority('registry:write')`
+- Read endpoints require `hasRole('ADMIN') or hasAuthority('registry:read')`
+- Delete endpoints require `hasRole('ADMIN') or hasAuthority('registry:delete')`
 - `SecurityUtils` provides `getCurrentUserId()`, `getCurrentEmail()`, `isAuthenticated()`, `hasRole()`
 - Team membership is available from token claims (`getTeamIdsFromToken`, `getTeamRolesFromToken`)
 
@@ -901,7 +904,7 @@ Internal error details are never exposed to clients. All exceptions logged at WA
 - **Constants:** `AppConstants` — pagination defaults, port ranges, slug rules, health check params, per-team limits.
 - **Logging:** `@Slf4j` on all services. `LoggingInterceptor` logs request/response for all `/api/**`. `RequestCorrelationFilter` provides MDC correlationId.
 - **Documentation:** Javadoc present on all classes and public methods (services, security, config, entities, repositories, enums, exceptions, util).
-- **Controllers:** **NONE EXIST YET** — this is the critical missing piece. Services are fully implemented and tested but not exposed via REST endpoints.
+- **Controllers:** 10 REST controllers expose all service-layer methods via secured endpoints with `@PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:*')")` annotations.
 
 ---
 
@@ -944,7 +947,7 @@ No Redis or caching layer detected in this project.
 | DB_USERNAME | No | `codeops` | application-dev.yml | Database username |
 | DB_PASSWORD | No | `codeops` | application-dev.yml | Database password |
 | JWT_SECRET | **Yes (prod)** | dev default (54 chars) | JwtProperties | Shared HMAC secret for JWT validation |
-| CODEOPS_SERVER_URL | **Yes (prod)** | `http://localhost:8090` | ServiceUrlProperties | CodeOps-Server base URL |
+| CODEOPS_SERVER_URL | **Yes (prod)** | `http://localhost:8095` | ServiceUrlProperties | CodeOps-Server base URL |
 | CODEOPS_VAULT_URL | **Yes (prod)** | `http://localhost:8097` | ServiceUrlProperties | CodeOps-Vault base URL |
 | CODEOPS_LOGGER_URL | **Yes (prod)** | `http://localhost:8098` | ServiceUrlProperties | CodeOps-Logger base URL |
 | CORS_ALLOWED_ORIGINS | **Yes (prod)** | localhost:3000 (dev) | CorsConfig | Allowed CORS origins |

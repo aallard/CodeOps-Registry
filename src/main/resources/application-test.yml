@@ -23,7 +23,7 @@ codeops:
   cors:
     allowed-origins: http://localhost:3000
   services:
-    server-url: http://localhost:8090
+    server-url: http://localhost:8095
     vault-url: http://localhost:8097
     logger-url: http://localhost:8098
 

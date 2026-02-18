@@ -76,8 +76,8 @@ class SolutionControllerTest {
                 .compact();
     }
 
-    private String architectToken() {
-        return buildToken("ARCHITECT");
+    private String adminToken() {
+        return buildToken("ADMIN");
     }
 
     private String memberToken() {
@@ -195,7 +195,7 @@ class SolutionControllerTest {
     }
 
     // ──────────────────────────────────────────────
-    // Happy path tests — ARCHITECT role
+    // Happy path tests — ADMIN role
     // ──────────────────────────────────────────────
 
     @Test
@@ -208,7 +208,7 @@ class SolutionControllerTest {
                 null, null, null, null, null, null));
 
         mockMvc.perform(post("/api/v1/registry/teams/{teamId}/solutions", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -223,7 +223,7 @@ class SolutionControllerTest {
                 .thenReturn(new PageResponse<>(List.of(sampleSolutionResponse()), 0, 20, 1, 1, true));
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/solutions", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content[0].name").value("Test Solution"))
@@ -237,7 +237,7 @@ class SolutionControllerTest {
                 .thenReturn(new PageResponse<>(List.of(sampleSolutionResponse()), 0, 20, 1, 1, true));
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/solutions", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("status", "ACTIVE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].status").value("ACTIVE"));
@@ -250,7 +250,7 @@ class SolutionControllerTest {
                 .thenReturn(new PageResponse<>(List.of(sampleSolutionResponse()), 0, 20, 1, 1, true));
 
         mockMvc.perform(get("/api/v1/registry/teams/{teamId}/solutions", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .param("category", "APPLICATION"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].category").value("APPLICATION"));
@@ -262,7 +262,7 @@ class SolutionControllerTest {
                 .thenReturn(sampleSolutionResponse());
 
         mockMvc.perform(get("/api/v1/registry/solutions/{solutionId}", SOLUTION_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(SOLUTION_ID.toString()))
                 .andExpect(jsonPath("$.name").value("Test Solution"));
@@ -275,7 +275,7 @@ class SolutionControllerTest {
                 .thenThrow(new NotFoundException("Solution", missingId));
 
         mockMvc.perform(get("/api/v1/registry/solutions/{solutionId}", missingId)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNotFound());
     }
 
@@ -288,7 +288,7 @@ class SolutionControllerTest {
                 "Updated Solution", null, null, null, null, null, null, null, null, null));
 
         mockMvc.perform(put("/api/v1/registry/solutions/{solutionId}", SOLUTION_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk());
@@ -304,7 +304,7 @@ class SolutionControllerTest {
                 "Updated", null, null, null, null, null, null, null, null, null));
 
         mockMvc.perform(put("/api/v1/registry/solutions/{solutionId}", missingId)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isNotFound());
@@ -315,7 +315,7 @@ class SolutionControllerTest {
         doNothing().when(solutionService).deleteSolution(SOLUTION_ID);
 
         mockMvc.perform(delete("/api/v1/registry/solutions/{solutionId}", SOLUTION_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNoContent());
     }
 
@@ -326,7 +326,7 @@ class SolutionControllerTest {
                 .when(solutionService).deleteSolution(missingId);
 
         mockMvc.perform(delete("/api/v1/registry/solutions/{solutionId}", missingId)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNotFound());
     }
 
@@ -336,7 +336,7 @@ class SolutionControllerTest {
                 .thenReturn(sampleDetailResponse());
 
         mockMvc.perform(get("/api/v1/registry/solutions/{solutionId}/detail", SOLUTION_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Test Solution"))
                 .andExpect(jsonPath("$.members").isArray());
@@ -351,7 +351,7 @@ class SolutionControllerTest {
                 SERVICE_ID, SolutionMemberRole.CORE, null, null));
 
         mockMvc.perform(post("/api/v1/registry/solutions/{solutionId}/members", SOLUTION_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -368,7 +368,7 @@ class SolutionControllerTest {
                 SERVICE_ID, SolutionMemberRole.CORE, null, null));
 
         mockMvc.perform(post("/api/v1/registry/solutions/{solutionId}/members", SOLUTION_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest());
@@ -384,7 +384,7 @@ class SolutionControllerTest {
 
         mockMvc.perform(put("/api/v1/registry/solutions/{solutionId}/members/{serviceId}",
                         SOLUTION_ID, SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk());
@@ -396,7 +396,7 @@ class SolutionControllerTest {
 
         mockMvc.perform(delete("/api/v1/registry/solutions/{solutionId}/members/{serviceId}",
                         SOLUTION_ID, SERVICE_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isNoContent());
     }
 
@@ -410,7 +410,7 @@ class SolutionControllerTest {
         String body = objectMapper.writeValueAsString(List.of(svc1, svc2));
 
         mockMvc.perform(put("/api/v1/registry/solutions/{solutionId}/members/reorder", SOLUTION_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
@@ -426,7 +426,7 @@ class SolutionControllerTest {
         String body = objectMapper.writeValueAsString(List.of(invalidId));
 
         mockMvc.perform(put("/api/v1/registry/solutions/{solutionId}/members/reorder", SOLUTION_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest());
@@ -438,7 +438,7 @@ class SolutionControllerTest {
                 .thenReturn(sampleHealthResponse());
 
         mockMvc.perform(get("/api/v1/registry/solutions/{solutionId}/health", SOLUTION_ID)
-                        .header("Authorization", "Bearer " + architectToken()))
+                        .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.aggregatedHealth").value("UP"))
                 .andExpect(jsonPath("$.totalServices").value(1));
@@ -456,7 +456,7 @@ class SolutionControllerTest {
                 null, null, null, null, null, null));
 
         mockMvc.perform(post("/api/v1/registry/teams/{teamId}/solutions", TEAM_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest());
@@ -466,7 +466,7 @@ class SolutionControllerTest {
     void addSolutionMember_invalidBody_returns400() throws Exception {
         // Missing required fields: serviceId, role
         mockMvc.perform(post("/api/v1/registry/solutions/{solutionId}/members", SOLUTION_ID)
-                        .header("Authorization", "Bearer " + architectToken())
+                        .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"serviceId\":null,\"role\":null}"))
                 .andExpect(status().isBadRequest());

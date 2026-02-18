@@ -28,8 +28,8 @@ import java.util.UUID;
 /**
  * REST controller for service registration CRUD, identity assembly, and health checking.
  *
- * <p>All endpoints require JWT authentication. Write operations require the {@code ARCHITECT}
- * role or the {@code registry:write} authority; read operations require the {@code ARCHITECT}
+ * <p>All endpoints require JWT authentication. Write operations require the {@code ADMIN}
+ * role or the {@code registry:write} authority; read operations require the {@code ADMIN}
  * role or the {@code registry:read} authority.</p>
  *
  * @see ServiceRegistryService
@@ -51,7 +51,7 @@ public class RegistryController {
      * @return a 201 response with the created service registration
      */
     @PostMapping("/teams/{teamId}/services")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<ServiceRegistrationResponse> createService(
             @PathVariable UUID teamId,
             @Valid @RequestBody CreateServiceRequest request) {
@@ -71,7 +71,7 @@ public class RegistryController {
      * @return a 200 response with the paginated service list
      */
     @GetMapping("/teams/{teamId}/services")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<PageResponse<ServiceRegistrationResponse>> getServicesForTeam(
             @PathVariable UUID teamId,
             @RequestParam(required = false) ServiceStatus status,
@@ -88,7 +88,7 @@ public class RegistryController {
      * @return a 200 response with the service registration
      */
     @GetMapping("/services/{serviceId}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<ServiceRegistrationResponse> getService(@PathVariable UUID serviceId) {
         return ResponseEntity.ok(serviceRegistryService.getService(serviceId));
     }
@@ -101,7 +101,7 @@ public class RegistryController {
      * @return a 200 response with the updated service registration
      */
     @PutMapping("/services/{serviceId}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<ServiceRegistrationResponse> updateService(
             @PathVariable UUID serviceId,
             @Valid @RequestBody UpdateServiceRequest request) {
@@ -115,7 +115,7 @@ public class RegistryController {
      * @return a 204 response with no content
      */
     @DeleteMapping("/services/{serviceId}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<Void> deleteService(@PathVariable UUID serviceId) {
         serviceRegistryService.deleteService(serviceId);
         return ResponseEntity.noContent().build();
@@ -129,7 +129,7 @@ public class RegistryController {
      * @return a 200 response with the updated service registration
      */
     @PatchMapping("/services/{serviceId}/status")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<ServiceRegistrationResponse> updateServiceStatus(
             @PathVariable UUID serviceId,
             @Valid @RequestBody UpdateServiceStatusRequest request) {
@@ -144,7 +144,7 @@ public class RegistryController {
      * @return a 201 response with the cloned service registration
      */
     @PostMapping("/services/{serviceId}/clone")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<ServiceRegistrationResponse> cloneService(
             @PathVariable UUID serviceId,
             @Valid @RequestBody CloneServiceRequest request) {
@@ -161,7 +161,7 @@ public class RegistryController {
      * @return a 200 response with the service identity
      */
     @GetMapping("/services/{serviceId}/identity")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<ServiceIdentityResponse> getServiceIdentity(
             @PathVariable UUID serviceId,
             @RequestParam(required = false) String environment) {
@@ -175,7 +175,7 @@ public class RegistryController {
      * @return a 200 response with the health check result
      */
     @PostMapping("/services/{serviceId}/health")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<ServiceHealthResponse> checkHealth(@PathVariable UUID serviceId) {
         return ResponseEntity.ok(serviceRegistryService.checkHealth(serviceId));
     }
@@ -187,7 +187,7 @@ public class RegistryController {
      * @return a 200 response with health check results for all active services
      */
     @PostMapping("/teams/{teamId}/services/health")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:write')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:write')")
     public ResponseEntity<List<ServiceHealthResponse>> checkAllHealth(@PathVariable UUID teamId) {
         return ResponseEntity.ok(serviceRegistryService.checkAllHealth(teamId));
     }
@@ -200,7 +200,7 @@ public class RegistryController {
      * @return a 200 response with the service registration
      */
     @GetMapping("/teams/{teamId}/services/by-slug/{slug}")
-    @PreAuthorize("hasRole('ARCHITECT') or hasAuthority('registry:read')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('registry:read')")
     public ResponseEntity<ServiceRegistrationResponse> getServiceBySlug(
             @PathVariable UUID teamId,
             @PathVariable String slug) {
