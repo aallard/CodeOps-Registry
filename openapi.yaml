@@ -1,789 +1,197 @@
-openapi: 3.0.3
+openapi: 3.0.1
 info:
   title: CodeOps Registry API
-  description: |
-    Service registry and development control plane for the CodeOps platform.
-    Manages service registrations, port allocations, solutions, dependencies,
-    API routes, infrastructure resources, environment configs, workstation profiles,
-    and topology visualization.
-
-    **NOTE:** Controllers are not yet implemented. This spec defines the intended
-    API surface based on the service layer, DTOs, and project design. It serves
-    as the contract for controller implementation.
-  version: 0.1.0-SNAPSHOT
+  description: "Service registry and development control plane for the CodeOps platform.\
+    \ Manages service registrations, port allocations, solutions, dependencies, API\
+    \ routes, infrastructure resources, environment configs, workstation profiles,\
+    \ topology visualization, and health management."
   contact:
     name: CodeOps Team
-
+  version: 1.0.0
 servers:
-  - url: http://localhost:8096
-    description: Local development
-
+- url: http://localhost:8096
+  description: Local development
 security:
-  - bearerAuth: []
-
-tags:
-  - name: Health
-    description: Public health check
-  - name: Services
-    description: Service registration CRUD and identity
-  - name: Ports
-    description: Port allocation, ranges, and port map
-  - name: Dependencies
-    description: Dependency graph, impact analysis, startup order
-  - name: Solutions
-    description: Solution grouping and membership
-  - name: Routes
-    description: API route registration and collision detection
-  - name: InfraResources
-    description: Infrastructure resource tracking
-  - name: Config
-    description: Environment configuration and templates
-  - name: Profiles
-    description: Workstation profiles
-  - name: Topology
-    description: Topology visualization
-
+- bearerAuth: []
 paths:
-  /api/v1/health:
+  /api/v1/registry/workstations/{profileId}:
     get:
-      tags: [Health]
-      summary: Health check
-      security: []
-      operationId: health
-      responses:
-        '200':
-          description: Service is healthy
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: UP
-                  service:
-                    type: string
-                    example: codeops-registry
-                  timestamp:
-                    type: string
-                    format: date-time
-
-  # ────────────────────────────────────────────
-  # SERVICES
-  # ────────────────────────────────────────────
-  /api/v1/registry/teams/{teamId}/services:
-    post:
-      tags: [Services]
-      summary: Register a new service
-      operationId: createService
+      tags:
+      - Profiles
+      operationId: getProfile
       parameters:
-        - $ref: '#/components/parameters/teamId'
-      requestBody:
+      - name: profileId
+        in: path
         required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateServiceRequest'
+        schema:
+          type: string
+          format: uuid
       responses:
-        '201':
-          description: Service created
+        "200":
+          description: OK
           content:
-            application/json:
+            '*/*':
               schema:
-                $ref: '#/components/schemas/ServiceRegistrationResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-    get:
-      tags: [Services]
-      summary: List services for a team
-      operationId: getServicesForTeam
-      parameters:
-        - $ref: '#/components/parameters/teamId'
-        - name: status
-          in: query
-          schema:
-            $ref: '#/components/schemas/ServiceStatus'
-        - name: type
-          in: query
-          schema:
-            $ref: '#/components/schemas/ServiceType'
-        - name: search
-          in: query
-          schema:
-            type: string
-        - $ref: '#/components/parameters/page'
-        - $ref: '#/components/parameters/size'
-      responses:
-        '200':
-          description: Paginated service list
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PageServiceRegistrationResponse'
-
-  /api/v1/registry/services/{serviceId}:
-    get:
-      tags: [Services]
-      summary: Get a service by ID
-      operationId: getService
-      parameters:
-        - $ref: '#/components/parameters/serviceId'
-      responses:
-        '200':
-          description: Service found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ServiceRegistrationResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/WorkstationProfileResponse"
     put:
-      tags: [Services]
-      summary: Update a service
-      operationId: updateService
+      tags:
+      - Profiles
+      operationId: updateProfile
       parameters:
-        - $ref: '#/components/parameters/serviceId'
-      requestBody:
+      - name: profileId
+        in: path
         required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateServiceRequest'
+              $ref: "#/components/schemas/UpdateWorkstationProfileRequest"
+        required: true
       responses:
-        '200':
-          description: Service updated
+        "200":
+          description: OK
           content:
-            application/json:
+            '*/*':
               schema:
-                $ref: '#/components/schemas/ServiceRegistrationResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/WorkstationProfileResponse"
     delete:
-      tags: [Services]
-      summary: Delete a service
-      operationId: deleteService
+      tags:
+      - Profiles
+      operationId: deleteProfile
       parameters:
-        - $ref: '#/components/parameters/serviceId'
-      responses:
-        '204':
-          description: Service deleted
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /api/v1/registry/services/{serviceId}/status:
-    patch:
-      tags: [Services]
-      summary: Update service status
-      operationId: updateServiceStatus
-      parameters:
-        - $ref: '#/components/parameters/serviceId'
-      requestBody:
+      - name: profileId
+        in: path
         required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateServiceStatusRequest'
+        schema:
+          type: string
+          format: uuid
       responses:
-        '200':
-          description: Status updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ServiceRegistrationResponse'
-
-  /api/v1/registry/services/{serviceId}/clone:
-    post:
-      tags: [Services]
-      summary: Clone a service
-      operationId: cloneService
-      parameters:
-        - $ref: '#/components/parameters/serviceId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CloneServiceRequest'
-      responses:
-        '201':
-          description: Service cloned
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ServiceRegistrationResponse'
-
-  /api/v1/registry/services/{serviceId}/identity:
-    get:
-      tags: [Services]
-      summary: Get complete service identity
-      operationId: getServiceIdentity
-      parameters:
-        - $ref: '#/components/parameters/serviceId'
-        - name: environment
-          in: query
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Service identity
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ServiceIdentityResponse'
-
-  /api/v1/registry/services/{serviceId}/health:
-    post:
-      tags: [Services]
-      summary: Check service health
-      operationId: checkHealth
-      parameters:
-        - $ref: '#/components/parameters/serviceId'
-      responses:
-        '200':
-          description: Health check result
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ServiceHealthResponse'
-
-  /api/v1/registry/teams/{teamId}/services/health:
-    post:
-      tags: [Services]
-      summary: Check health of all active services
-      operationId: checkAllHealth
-      parameters:
-        - $ref: '#/components/parameters/teamId'
-      responses:
-        '200':
-          description: Health check results
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ServiceHealthResponse'
-
-  /api/v1/registry/teams/{teamId}/services/by-slug/{slug}:
-    get:
-      tags: [Services]
-      summary: Get a service by slug
-      operationId: getServiceBySlug
-      parameters:
-        - $ref: '#/components/parameters/teamId'
-        - name: slug
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Service found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ServiceRegistrationResponse'
-
-  # ────────────────────────────────────────────
-  # PORTS
-  # ────────────────────────────────────────────
-  /api/v1/registry/ports/auto-allocate:
-    post:
-      tags: [Ports]
-      summary: Auto-allocate a port
-      operationId: autoAllocatePort
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AutoAllocatePortRequest'
-      responses:
-        '201':
-          description: Port allocated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PortAllocationResponse'
-
-  /api/v1/registry/ports/allocate:
-    post:
-      tags: [Ports]
-      summary: Manually allocate a specific port
-      operationId: manualAllocatePort
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AllocatePortRequest'
-      responses:
-        '201':
-          description: Port allocated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PortAllocationResponse'
-
-  /api/v1/registry/ports/{allocationId}:
-    delete:
-      tags: [Ports]
-      summary: Release a port allocation
-      operationId: releasePort
-      parameters:
-        - name: allocationId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '204':
-          description: Port released
-
-  /api/v1/registry/services/{serviceId}/ports:
-    get:
-      tags: [Ports]
-      summary: List ports for a service
-      operationId: getPortsForService
-      parameters:
-        - $ref: '#/components/parameters/serviceId'
-        - name: environment
-          in: query
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Port allocations
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PortAllocationResponse'
-
-  /api/v1/registry/teams/{teamId}/ports:
-    get:
-      tags: [Ports]
-      summary: List ports for a team in an environment
-      operationId: getPortsForTeam
-      parameters:
-        - $ref: '#/components/parameters/teamId'
-        - name: environment
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Port allocations
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PortAllocationResponse'
-
-  /api/v1/registry/teams/{teamId}/ports/map:
-    get:
-      tags: [Ports]
-      summary: Get structured port map
-      operationId: getPortMap
-      parameters:
-        - $ref: '#/components/parameters/teamId'
-        - name: environment
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Port map
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PortMapResponse'
-
-  /api/v1/registry/teams/{teamId}/ports/check:
-    get:
-      tags: [Ports]
-      summary: Check port availability
-      operationId: checkPortAvailability
-      parameters:
-        - $ref: '#/components/parameters/teamId'
-        - name: portNumber
-          in: query
-          required: true
-          schema:
-            type: integer
-        - name: environment
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Port availability
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PortCheckResponse'
-
-  /api/v1/registry/teams/{teamId}/ports/conflicts:
-    get:
-      tags: [Ports]
-      summary: Detect port conflicts
-      operationId: detectPortConflicts
-      parameters:
-        - $ref: '#/components/parameters/teamId'
-      responses:
-        '200':
-          description: Port conflicts
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PortConflictResponse'
-
-  /api/v1/registry/teams/{teamId}/ports/ranges:
-    get:
-      tags: [Ports]
-      summary: List port ranges for a team
-      operationId: getPortRanges
-      parameters:
-        - $ref: '#/components/parameters/teamId'
-      responses:
-        '200':
-          description: Port ranges
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PortRangeResponse'
-
-  /api/v1/registry/teams/{teamId}/ports/ranges/seed:
-    post:
-      tags: [Ports]
-      summary: Seed default port ranges
-      operationId: seedDefaultRanges
-      parameters:
-        - $ref: '#/components/parameters/teamId'
-        - name: environment
-          in: query
-          schema:
-            type: string
-            default: local
-      responses:
-        '200':
-          description: Port ranges seeded
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PortRangeResponse'
-
-  /api/v1/registry/ports/ranges/{rangeId}:
-    put:
-      tags: [Ports]
-      summary: Update a port range
-      operationId: updatePortRange
-      parameters:
-        - name: rangeId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdatePortRangeRequest'
-      responses:
-        '200':
-          description: Range updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PortRangeResponse'
-
-  # ────────────────────────────────────────────
-  # DEPENDENCIES
-  # ────────────────────────────────────────────
-  /api/v1/registry/dependencies:
-    post:
-      tags: [Dependencies]
-      summary: Create a dependency
-      operationId: createDependency
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateDependencyRequest'
-      responses:
-        '201':
-          description: Dependency created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ServiceDependencyResponse'
-
-  /api/v1/registry/dependencies/{dependencyId}:
-    delete:
-      tags: [Dependencies]
-      summary: Remove a dependency
-      operationId: removeDependency
-      parameters:
-        - name: dependencyId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '204':
-          description: Dependency removed
-
-  /api/v1/registry/teams/{teamId}/dependencies/graph:
-    get:
-      tags: [Dependencies]
-      summary: Get dependency graph for visualization
-      operationId: getDependencyGraph
-      parameters:
-        - $ref: '#/components/parameters/teamId'
-      responses:
-        '200':
-          description: Dependency graph
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DependencyGraphResponse'
-
-  /api/v1/registry/services/{serviceId}/dependencies/impact:
-    get:
-      tags: [Dependencies]
-      summary: BFS impact analysis
-      operationId: getImpactAnalysis
-      parameters:
-        - $ref: '#/components/parameters/serviceId'
-      responses:
-        '200':
-          description: Impact analysis
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ImpactAnalysisResponse'
-
-  /api/v1/registry/teams/{teamId}/dependencies/startup-order:
-    get:
-      tags: [Dependencies]
-      summary: Topological startup order
-      operationId: getStartupOrder
-      parameters:
-        - $ref: '#/components/parameters/teamId'
-      responses:
-        '200':
-          description: Startup order
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DependencyNodeResponse'
-
-  /api/v1/registry/teams/{teamId}/dependencies/cycles:
-    get:
-      tags: [Dependencies]
-      summary: Detect dependency cycles
-      operationId: detectCycles
-      parameters:
-        - $ref: '#/components/parameters/teamId'
-      responses:
-        '200':
-          description: Service IDs in cycles
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: string
-                  format: uuid
-
-  # ────────────────────────────────────────────
-  # SOLUTIONS
-  # ────────────────────────────────────────────
-  /api/v1/registry/teams/{teamId}/solutions:
-    post:
-      tags: [Solutions]
-      summary: Create a solution
-      operationId: createSolution
-      parameters:
-        - $ref: '#/components/parameters/teamId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateSolutionRequest'
-      responses:
-        '201':
-          description: Solution created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SolutionResponse'
-    get:
-      tags: [Solutions]
-      summary: List solutions for a team
-      operationId: getSolutionsForTeam
-      parameters:
-        - $ref: '#/components/parameters/teamId'
-        - name: status
-          in: query
-          schema:
-            $ref: '#/components/schemas/SolutionStatus'
-        - name: category
-          in: query
-          schema:
-            $ref: '#/components/schemas/SolutionCategory'
-        - $ref: '#/components/parameters/page'
-        - $ref: '#/components/parameters/size'
-      responses:
-        '200':
-          description: Paginated solution list
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PageSolutionResponse'
-
+        "200":
+          description: OK
   /api/v1/registry/solutions/{solutionId}:
     get:
-      tags: [Solutions]
-      summary: Get a solution by ID
+      tags:
+      - Solutions
       operationId: getSolution
       parameters:
-        - $ref: '#/components/parameters/solutionId'
+      - name: solutionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        '200':
-          description: Solution found
+        "200":
+          description: OK
           content:
-            application/json:
+            '*/*':
               schema:
-                $ref: '#/components/schemas/SolutionResponse'
+                $ref: "#/components/schemas/SolutionResponse"
     put:
-      tags: [Solutions]
-      summary: Update a solution
+      tags:
+      - Solutions
       operationId: updateSolution
       parameters:
-        - $ref: '#/components/parameters/solutionId'
-      requestBody:
+      - name: solutionId
+        in: path
         required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateSolutionRequest'
+              $ref: "#/components/schemas/UpdateSolutionRequest"
+        required: true
       responses:
-        '200':
-          description: Solution updated
+        "200":
+          description: OK
           content:
-            application/json:
+            '*/*':
               schema:
-                $ref: '#/components/schemas/SolutionResponse'
+                $ref: "#/components/schemas/SolutionResponse"
     delete:
-      tags: [Solutions]
-      summary: Delete a solution
+      tags:
+      - Solutions
       operationId: deleteSolution
       parameters:
-        - $ref: '#/components/parameters/solutionId'
-      responses:
-        '204':
-          description: Solution deleted
-
-  /api/v1/registry/solutions/{solutionId}/detail:
-    get:
-      tags: [Solutions]
-      summary: Get solution detail with members
-      operationId: getSolutionDetail
-      parameters:
-        - $ref: '#/components/parameters/solutionId'
-      responses:
-        '200':
-          description: Solution detail
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SolutionDetailResponse'
-
-  /api/v1/registry/solutions/{solutionId}/members:
-    post:
-      tags: [Solutions]
-      summary: Add a member to a solution
-      operationId: addSolutionMember
-      parameters:
-        - $ref: '#/components/parameters/solutionId'
-      requestBody:
+      - name: solutionId
+        in: path
         required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AddSolutionMemberRequest'
+        schema:
+          type: string
+          format: uuid
       responses:
-        '201':
-          description: Member added
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SolutionMemberResponse'
-
+        "200":
+          description: OK
   /api/v1/registry/solutions/{solutionId}/members/{serviceId}:
     put:
-      tags: [Solutions]
-      summary: Update a solution member
+      tags:
+      - Solutions
       operationId: updateSolutionMember
       parameters:
-        - $ref: '#/components/parameters/solutionId'
-        - $ref: '#/components/parameters/serviceId'
-      requestBody:
+      - name: solutionId
+        in: path
         required: true
+        schema:
+          type: string
+          format: uuid
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateSolutionMemberRequest'
+              $ref: "#/components/schemas/UpdateSolutionMemberRequest"
+        required: true
       responses:
-        '200':
-          description: Member updated
+        "200":
+          description: OK
           content:
-            application/json:
+            '*/*':
               schema:
-                $ref: '#/components/schemas/SolutionMemberResponse'
+                $ref: "#/components/schemas/SolutionMemberResponse"
     delete:
-      tags: [Solutions]
-      summary: Remove a member from a solution
+      tags:
+      - Solutions
       operationId: removeSolutionMember
       parameters:
-        - $ref: '#/components/parameters/solutionId'
-        - $ref: '#/components/parameters/serviceId'
+      - name: solutionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        '204':
-          description: Member removed
-
+        "200":
+          description: OK
   /api/v1/registry/solutions/{solutionId}/members/reorder:
     put:
-      tags: [Solutions]
-      summary: Reorder solution members
+      tags:
+      - Solutions
       operationId: reorderSolutionMembers
       parameters:
-        - $ref: '#/components/parameters/solutionId'
-      requestBody:
+      - name: solutionId
+        in: path
         required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
         content:
           application/json:
             schema:
@@ -791,948 +199,3446 @@ paths:
               items:
                 type: string
                 format: uuid
+        required: true
       responses:
-        '200':
-          description: Members reordered
+        "200":
+          description: OK
           content:
-            application/json:
+            '*/*':
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SolutionMemberResponse'
-
-  /api/v1/registry/solutions/{solutionId}/health:
+                  $ref: "#/components/schemas/SolutionMemberResponse"
+  /api/v1/registry/services/{serviceId}:
     get:
-      tags: [Solutions]
-      summary: Get aggregated solution health
-      operationId: getSolutionHealth
+      tags:
+      - Services
+      operationId: getService
       parameters:
-        - $ref: '#/components/parameters/solutionId'
-      responses:
-        '200':
-          description: Solution health
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SolutionHealthResponse'
-
-  # ────────────────────────────────────────────
-  # ROUTES
-  # ────────────────────────────────────────────
-  /api/v1/registry/routes:
-    post:
-      tags: [Routes]
-      summary: Register an API route
-      operationId: createRoute
-      requestBody:
+      - name: serviceId
+        in: path
         required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ServiceRegistrationResponse"
+    put:
+      tags:
+      - Services
+      operationId: updateService
+      parameters:
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateRouteRequest'
+              $ref: "#/components/schemas/UpdateServiceRequest"
+        required: true
       responses:
-        '201':
-          description: Route created
+        "200":
+          description: OK
           content:
-            application/json:
+            '*/*':
               schema:
-                $ref: '#/components/schemas/ApiRouteResponse'
-
-  /api/v1/registry/routes/{routeId}:
+                $ref: "#/components/schemas/ServiceRegistrationResponse"
     delete:
-      tags: [Routes]
-      summary: Delete a route
-      operationId: deleteRoute
+      tags:
+      - Services
+      operationId: deleteService
       parameters:
-        - name: routeId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '204':
-          description: Route deleted
-
-  /api/v1/registry/services/{serviceId}/routes:
-    get:
-      tags: [Routes]
-      summary: List routes for a service
-      operationId: getRoutesForService
-      parameters:
-        - $ref: '#/components/parameters/serviceId'
-      responses:
-        '200':
-          description: Route list
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ApiRouteResponse'
-
-  /api/v1/registry/services/{gatewayServiceId}/routes/gateway:
-    get:
-      tags: [Routes]
-      summary: List routes behind a gateway
-      operationId: getRoutesForGateway
-      parameters:
-        - name: gatewayServiceId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: environment
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Gateway route list
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ApiRouteResponse'
-
-  /api/v1/registry/routes/check:
-    get:
-      tags: [Routes]
-      summary: Check route prefix availability
-      operationId: checkRouteAvailability
-      parameters:
-        - name: gatewayServiceId
-          in: query
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: environment
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: routePrefix
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Route availability
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RouteCheckResponse'
-
-  # ────────────────────────────────────────────
-  # INFRA RESOURCES
-  # ────────────────────────────────────────────
-  /api/v1/registry/teams/{teamId}/infra-resources:
-    post:
-      tags: [InfraResources]
-      summary: Register an infrastructure resource
-      operationId: createInfraResource
-      parameters:
-        - $ref: '#/components/parameters/teamId'
-      requestBody:
+      - name: serviceId
+        in: path
         required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+  /api/v1/registry/ports/ranges/{rangeId}:
+    put:
+      tags:
+      - Ports
+      operationId: updatePortRange
+      parameters:
+      - name: rangeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateInfraResourceRequest'
+              $ref: "#/components/schemas/UpdatePortRangeRequest"
+        required: true
       responses:
-        '201':
-          description: Resource created
+        "200":
+          description: OK
           content:
-            application/json:
+            '*/*':
               schema:
-                $ref: '#/components/schemas/InfraResourceResponse'
-    get:
-      tags: [InfraResources]
-      summary: List infra resources for a team
-      operationId: getResourcesForTeam
-      parameters:
-        - $ref: '#/components/parameters/teamId'
-        - name: type
-          in: query
-          schema:
-            $ref: '#/components/schemas/InfraResourceType'
-        - name: environment
-          in: query
-          schema:
-            type: string
-        - $ref: '#/components/parameters/page'
-        - $ref: '#/components/parameters/size'
-      responses:
-        '200':
-          description: Paginated resource list
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PageInfraResourceResponse'
-
+                $ref: "#/components/schemas/PortRangeResponse"
   /api/v1/registry/infra-resources/{resourceId}:
     put:
-      tags: [InfraResources]
-      summary: Update an infra resource
-      operationId: updateInfraResource
+      tags:
+      - InfraResources
+      operationId: updateResource
       parameters:
-        - name: resourceId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
+      - name: resourceId
+        in: path
         required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateInfraResourceRequest'
+              $ref: "#/components/schemas/UpdateInfraResourceRequest"
+        required: true
       responses:
-        '200':
-          description: Resource updated
+        "200":
+          description: OK
           content:
-            application/json:
+            '*/*':
               schema:
-                $ref: '#/components/schemas/InfraResourceResponse'
+                $ref: "#/components/schemas/InfraResourceResponse"
     delete:
-      tags: [InfraResources]
-      summary: Delete an infra resource
-      operationId: deleteInfraResource
+      tags:
+      - InfraResources
+      operationId: deleteResource
       parameters:
-        - name: resourceId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      - name: resourceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        '204':
-          description: Resource deleted
-
-  /api/v1/registry/services/{serviceId}/infra-resources:
-    get:
-      tags: [InfraResources]
-      summary: List infra resources for a service
-      operationId: getResourcesForService
+        "200":
+          description: OK
+  /api/v1/registry/workstations/{profileId}/refresh-startup-order:
+    post:
+      tags:
+      - Profiles
+      operationId: refreshStartupOrder
       parameters:
-        - $ref: '#/components/parameters/serviceId'
+      - name: profileId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        '200':
-          description: Resource list
+        "200":
+          description: OK
           content:
-            application/json:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WorkstationProfileResponse"
+  /api/v1/registry/teams/{teamId}/workstations:
+    get:
+      tags:
+      - Profiles
+      operationId: getProfilesForTeam
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/InfraResourceResponse'
-
-  /api/v1/registry/teams/{teamId}/infra-resources/orphans:
-    get:
-      tags: [InfraResources]
-      summary: Find orphaned resources
-      operationId: findOrphanedResources
+                  $ref: "#/components/schemas/WorkstationProfileResponse"
+    post:
+      tags:
+      - Profiles
+      operationId: createProfile
       parameters:
-        - $ref: '#/components/parameters/teamId'
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkstationProfileRequest"
+        required: true
       responses:
-        '200':
-          description: Orphaned resources
+        "200":
+          description: OK
           content:
-            application/json:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WorkstationProfileResponse"
+  /api/v1/registry/teams/{teamId}/solutions:
+    get:
+      tags:
+      - Solutions
+      operationId: getSolutionsForTeam
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - ACTIVE
+          - IN_DEVELOPMENT
+          - DEPRECATED
+          - ARCHIVED
+      - name: category
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - PLATFORM
+          - APPLICATION
+          - LIBRARY_SUITE
+          - INFRASTRUCTURE
+          - TOOLING
+          - OTHER
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageResponseSolutionResponse"
+    post:
+      tags:
+      - Solutions
+      operationId: createSolution
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSolutionRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SolutionResponse"
+  /api/v1/registry/teams/{teamId}/services:
+    get:
+      tags:
+      - Services
+      operationId: getServicesForTeam
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+          - DEPRECATED
+          - ARCHIVED
+      - name: type
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - SPRING_BOOT_API
+          - FLUTTER_WEB
+          - FLUTTER_DESKTOP
+          - FLUTTER_MOBILE
+          - REACT_SPA
+          - VUE_SPA
+          - NEXT_JS
+          - EXPRESS_API
+          - FASTAPI
+          - DOTNET_API
+          - GO_API
+          - LIBRARY
+          - WORKER
+          - GATEWAY
+          - DATABASE_SERVICE
+          - MESSAGE_BROKER
+          - CACHE_SERVICE
+          - MCP_SERVER
+          - CLI_TOOL
+          - OTHER
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageResponseServiceRegistrationResponse"
+    post:
+      tags:
+      - Services
+      operationId: createService
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ServiceRegistrationResponse"
+  /api/v1/registry/teams/{teamId}/services/health:
+    post:
+      tags:
+      - Services
+      operationId: checkAllHealth
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/InfraResourceResponse'
-
+                  $ref: "#/components/schemas/ServiceHealthResponse"
+  /api/v1/registry/teams/{teamId}/ports/ranges/seed:
+    post:
+      tags:
+      - Ports
+      operationId: seedDefaultRanges
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: environment
+        in: query
+        required: false
+        schema:
+          type: string
+          default: local
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortRangeResponse"
+  /api/v1/registry/teams/{teamId}/infra-resources:
+    get:
+      tags:
+      - InfraResources
+      operationId: getResourcesForTeam
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: type
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - S3_BUCKET
+          - SQS_QUEUE
+          - SNS_TOPIC
+          - CLOUDWATCH_LOG_GROUP
+          - IAM_ROLE
+          - SECRETS_MANAGER_PATH
+          - SSM_PARAMETER
+          - RDS_INSTANCE
+          - ELASTICACHE_CLUSTER
+          - ECR_REPOSITORY
+          - CLOUD_MAP_NAMESPACE
+          - ROUTE53_RECORD
+          - ACM_CERTIFICATE
+          - ALB_TARGET_GROUP
+          - ECS_SERVICE
+          - LAMBDA_FUNCTION
+          - DYNAMODB_TABLE
+          - DOCKER_NETWORK
+          - DOCKER_VOLUME
+          - OTHER
+      - name: environment
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageResponseInfraResourceResponse"
+    post:
+      tags:
+      - InfraResources
+      operationId: createResource
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInfraResourceRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/InfraResourceResponse"
+  /api/v1/registry/teams/{teamId}/health/check:
+    post:
+      tags:
+      - Health Management
+      operationId: checkTeamHealth
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TeamHealthSummaryResponse"
+  /api/v1/registry/solutions/{solutionId}/workstations/from-solution:
+    post:
+      tags:
+      - Profiles
+      operationId: createFromSolution
+      parameters:
+      - name: solutionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: teamId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WorkstationProfileResponse"
+  /api/v1/registry/solutions/{solutionId}/members:
+    post:
+      tags:
+      - Solutions
+      operationId: addSolutionMember
+      parameters:
+      - name: solutionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddSolutionMemberRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SolutionMemberResponse"
+  /api/v1/registry/solutions/{solutionId}/health/check:
+    post:
+      tags:
+      - Health Management
+      operationId: checkSolutionHealth
+      parameters:
+      - name: solutionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SolutionHealthResponse"
+  /api/v1/registry/solutions/{solutionId}/config/docker-compose:
+    post:
+      tags:
+      - Config
+      operationId: generateSolutionDockerCompose
+      parameters:
+      - name: solutionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: environment
+        in: query
+        required: false
+        schema:
+          type: string
+          default: local
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ConfigTemplateResponse"
+  /api/v1/registry/services/{serviceId}/health:
+    post:
+      tags:
+      - Services
+      operationId: checkHealth
+      parameters:
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ServiceHealthResponse"
+  /api/v1/registry/services/{serviceId}/config/generate:
+    post:
+      tags:
+      - Config
+      operationId: generateConfig
+      parameters:
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: type
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - DOCKER_COMPOSE
+          - APPLICATION_YML
+          - APPLICATION_PROPERTIES
+          - ENV_FILE
+          - TERRAFORM_MODULE
+          - CLAUDE_CODE_HEADER
+          - CONVENTIONS_MD
+          - NGINX_CONF
+          - GITHUB_ACTIONS
+          - DOCKERFILE
+          - MAKEFILE
+          - README_SECTION
+      - name: environment
+        in: query
+        required: false
+        schema:
+          type: string
+          default: local
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ConfigTemplateResponse"
+  /api/v1/registry/services/{serviceId}/config/generate-all:
+    post:
+      tags:
+      - Config
+      operationId: generateAllConfigs
+      parameters:
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: environment
+        in: query
+        required: false
+        schema:
+          type: string
+          default: local
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConfigTemplateResponse"
+  /api/v1/registry/services/{serviceId}/clone:
+    post:
+      tags:
+      - Services
+      operationId: cloneService
+      parameters:
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CloneServiceRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ServiceRegistrationResponse"
+  /api/v1/registry/routes:
+    post:
+      tags:
+      - Routes
+      operationId: createRoute
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRouteRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiRouteResponse"
+  /api/v1/registry/ports/auto-allocate:
+    post:
+      tags:
+      - Ports
+      operationId: autoAllocatePort
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AutoAllocatePortRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PortAllocationResponse"
+  /api/v1/registry/ports/allocate:
+    post:
+      tags:
+      - Ports
+      operationId: manualAllocatePort
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AllocatePortRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PortAllocationResponse"
+  /api/v1/registry/dependencies:
+    post:
+      tags:
+      - Dependencies
+      operationId: createDependency
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDependencyRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ServiceDependencyResponse"
+  /api/v1/registry/workstations/{profileId}/set-default:
+    patch:
+      tags:
+      - Profiles
+      operationId: setDefault
+      parameters:
+      - name: profileId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WorkstationProfileResponse"
+  /api/v1/registry/services/{serviceId}/status:
+    patch:
+      tags:
+      - Services
+      operationId: updateServiceStatus
+      parameters:
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateServiceStatusRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ServiceRegistrationResponse"
   /api/v1/registry/infra-resources/{resourceId}/reassign:
     patch:
-      tags: [InfraResources]
-      summary: Reassign resource to a different service
+      tags:
+      - InfraResources
       operationId: reassignResource
       parameters:
-        - name: resourceId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: newServiceId
-          in: query
-          required: true
-          schema:
-            type: string
-            format: uuid
+      - name: resourceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: newServiceId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        '200':
-          description: Resource reassigned
+        "200":
+          description: OK
           content:
-            application/json:
+            '*/*':
               schema:
-                $ref: '#/components/schemas/InfraResourceResponse'
-
+                $ref: "#/components/schemas/InfraResourceResponse"
   /api/v1/registry/infra-resources/{resourceId}/orphan:
     patch:
-      tags: [InfraResources]
-      summary: Remove service ownership from a resource
+      tags:
+      - InfraResources
       operationId: orphanResource
       parameters:
-        - name: resourceId
-          in: path
-          required: true
-          schema:
+      - name: resourceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/InfraResourceResponse"
+  /api/v1/registry/teams/{teamId}/workstations/default:
+    get:
+      tags:
+      - Profiles
+      operationId: getDefaultProfile
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WorkstationProfileResponse"
+  /api/v1/registry/teams/{teamId}/topology:
+    get:
+      tags:
+      - Topology
+      operationId: getTopology
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TopologyResponse"
+  /api/v1/registry/teams/{teamId}/topology/stats:
+    get:
+      tags:
+      - Topology
+      operationId: getEcosystemStats
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TopologyStatsResponse"
+  /api/v1/registry/teams/{teamId}/services/by-slug/{slug}:
+    get:
+      tags:
+      - Services
+      operationId: getServiceBySlug
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ServiceRegistrationResponse"
+  /api/v1/registry/teams/{teamId}/ports:
+    get:
+      tags:
+      - Ports
+      operationId: getPortsForTeam
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: environment
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortAllocationResponse"
+  /api/v1/registry/teams/{teamId}/ports/ranges:
+    get:
+      tags:
+      - Ports
+      operationId: getPortRanges
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortRangeResponse"
+  /api/v1/registry/teams/{teamId}/ports/map:
+    get:
+      tags:
+      - Ports
+      operationId: getPortMap
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: environment
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PortMapResponse"
+  /api/v1/registry/teams/{teamId}/ports/conflicts:
+    get:
+      tags:
+      - Ports
+      operationId: detectPortConflicts
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortConflictResponse"
+  /api/v1/registry/teams/{teamId}/ports/check:
+    get:
+      tags:
+      - Ports
+      operationId: checkPortAvailability
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: portNumber
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: environment
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PortCheckResponse"
+  /api/v1/registry/teams/{teamId}/infra-resources/orphans:
+    get:
+      tags:
+      - InfraResources
+      operationId: findOrphanedResources
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InfraResourceResponse"
+  /api/v1/registry/teams/{teamId}/health/unhealthy:
+    get:
+      tags:
+      - Health Management
+      operationId: getUnhealthyServices
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceHealthResponse"
+  /api/v1/registry/teams/{teamId}/health/summary:
+    get:
+      tags:
+      - Health Management
+      operationId: getTeamHealthSummary
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TeamHealthSummaryResponse"
+  /api/v1/registry/teams/{teamId}/health/never-checked:
+    get:
+      tags:
+      - Health Management
+      operationId: getServicesNeverChecked
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceHealthResponse"
+  /api/v1/registry/teams/{teamId}/dependencies/startup-order:
+    get:
+      tags:
+      - Dependencies
+      operationId: getStartupOrder
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DependencyNodeResponse"
+  /api/v1/registry/teams/{teamId}/dependencies/graph:
+    get:
+      tags:
+      - Dependencies
+      operationId: getDependencyGraph
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DependencyGraphResponse"
+  /api/v1/registry/teams/{teamId}/dependencies/cycles:
+    get:
+      tags:
+      - Dependencies
+      operationId: detectCycles
+      parameters:
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+  /api/v1/registry/solutions/{solutionId}/topology:
+    get:
+      tags:
+      - Topology
+      operationId: getSolutionTopology
+      parameters:
+      - name: solutionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TopologyResponse"
+  /api/v1/registry/solutions/{solutionId}/health:
+    get:
+      tags:
+      - Solutions
+      operationId: getSolutionHealth
+      parameters:
+      - name: solutionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SolutionHealthResponse"
+  /api/v1/registry/solutions/{solutionId}/detail:
+    get:
+      tags:
+      - Solutions
+      operationId: getSolutionDetail
+      parameters:
+      - name: solutionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SolutionDetailResponse"
+  /api/v1/registry/services/{serviceId}/topology/neighborhood:
+    get:
+      tags:
+      - Topology
+      operationId: getServiceNeighborhood
+      parameters:
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: depth
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TopologyResponse"
+  /api/v1/registry/services/{serviceId}/routes:
+    get:
+      tags:
+      - Routes
+      operationId: getRoutesForService
+      parameters:
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiRouteResponse"
+  /api/v1/registry/services/{serviceId}/ports:
+    get:
+      tags:
+      - Ports
+      operationId: getPortsForService
+      parameters:
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: environment
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortAllocationResponse"
+  /api/v1/registry/services/{serviceId}/infra-resources:
+    get:
+      tags:
+      - InfraResources
+      operationId: getResourcesForService
+      parameters:
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InfraResourceResponse"
+  /api/v1/registry/services/{serviceId}/identity:
+    get:
+      tags:
+      - Services
+      operationId: getServiceIdentity
+      parameters:
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: environment
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ServiceIdentityResponse"
+  /api/v1/registry/services/{serviceId}/health/cached:
+    get:
+      tags:
+      - Health Management
+      operationId: getServiceHealthCached
+      parameters:
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ServiceHealthResponse"
+  /api/v1/registry/services/{serviceId}/dependencies/impact:
+    get:
+      tags:
+      - Dependencies
+      operationId: getImpactAnalysis
+      parameters:
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ImpactAnalysisResponse"
+  /api/v1/registry/services/{serviceId}/config:
+    get:
+      tags:
+      - Config
+      operationId: getTemplate
+      parameters:
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: type
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - DOCKER_COMPOSE
+          - APPLICATION_YML
+          - APPLICATION_PROPERTIES
+          - ENV_FILE
+          - TERRAFORM_MODULE
+          - CLAUDE_CODE_HEADER
+          - CONVENTIONS_MD
+          - NGINX_CONF
+          - GITHUB_ACTIONS
+          - DOCKERFILE
+          - MAKEFILE
+          - README_SECTION
+      - name: environment
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ConfigTemplateResponse"
+  /api/v1/registry/services/{serviceId}/config/all:
+    get:
+      tags:
+      - Config
+      operationId: getTemplatesForService
+      parameters:
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConfigTemplateResponse"
+  /api/v1/registry/services/{gatewayServiceId}/routes/gateway:
+    get:
+      tags:
+      - Routes
+      operationId: getRoutesForGateway
+      parameters:
+      - name: gatewayServiceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: environment
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiRouteResponse"
+  /api/v1/registry/routes/check:
+    get:
+      tags:
+      - Routes
+      operationId: checkRouteAvailability
+      parameters:
+      - name: gatewayServiceId
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: environment
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: routePrefix
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/RouteCheckResponse"
+  /api/v1/health:
+    get:
+      tags:
+      - Health
+      operationId: health
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+  /api/v1/registry/routes/{routeId}:
+    delete:
+      tags:
+      - Routes
+      operationId: deleteRoute
+      parameters:
+      - name: routeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+  /api/v1/registry/ports/{allocationId}:
+    delete:
+      tags:
+      - Ports
+      operationId: releasePort
+      parameters:
+      - name: allocationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+  /api/v1/registry/dependencies/{dependencyId}:
+    delete:
+      tags:
+      - Dependencies
+      operationId: removeDependency
+      parameters:
+      - name: dependencyId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+  /api/v1/registry/config/{templateId}:
+    delete:
+      tags:
+      - Config
+      operationId: deleteTemplate
+      parameters:
+      - name: templateId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+components:
+  schemas:
+    UpdateWorkstationProfileRequest:
+      type: object
+      properties:
+        name:
+          maxLength: 100
+          minLength: 0
+          type: string
+        description:
+          type: string
+        serviceIds:
+          type: array
+          items:
             type: string
             format: uuid
-      responses:
-        '200':
-          description: Resource orphaned
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InfraResourceResponse'
-
-components:
+        isDefault:
+          type: boolean
+    WorkstationProfileResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        solutionId:
+          type: string
+          format: uuid
+        serviceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkstationServiceEntry"
+        startupOrder:
+          type: array
+          items:
+            type: string
+            format: uuid
+        isDefault:
+          type: boolean
+        createdByUserId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    WorkstationServiceEntry:
+      type: object
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        serviceType:
+          type: string
+          enum:
+          - SPRING_BOOT_API
+          - FLUTTER_WEB
+          - FLUTTER_DESKTOP
+          - FLUTTER_MOBILE
+          - REACT_SPA
+          - VUE_SPA
+          - NEXT_JS
+          - EXPRESS_API
+          - FASTAPI
+          - DOTNET_API
+          - GO_API
+          - LIBRARY
+          - WORKER
+          - GATEWAY
+          - DATABASE_SERVICE
+          - MESSAGE_BROKER
+          - CACHE_SERVICE
+          - MCP_SERVER
+          - CLI_TOOL
+          - OTHER
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+          - DEPRECATED
+          - ARCHIVED
+        healthStatus:
+          type: string
+          enum:
+          - UP
+          - DOWN
+          - DEGRADED
+          - UNKNOWN
+        startupPosition:
+          type: integer
+          format: int32
+    UpdateSolutionRequest:
+      type: object
+      properties:
+        name:
+          maxLength: 200
+          minLength: 0
+          type: string
+        description:
+          maxLength: 5000
+          minLength: 0
+          type: string
+        category:
+          type: string
+          enum:
+          - PLATFORM
+          - APPLICATION
+          - LIBRARY_SUITE
+          - INFRASTRUCTURE
+          - TOOLING
+          - OTHER
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - IN_DEVELOPMENT
+          - DEPRECATED
+          - ARCHIVED
+        iconName:
+          maxLength: 50
+          minLength: 0
+          type: string
+        colorHex:
+          maxLength: 7
+          minLength: 0
+          type: string
+        ownerUserId:
+          type: string
+          format: uuid
+        repositoryUrl:
+          maxLength: 500
+          minLength: 0
+          type: string
+        documentationUrl:
+          maxLength: 500
+          minLength: 0
+          type: string
+        metadataJson:
+          type: string
+    SolutionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum:
+          - PLATFORM
+          - APPLICATION
+          - LIBRARY_SUITE
+          - INFRASTRUCTURE
+          - TOOLING
+          - OTHER
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - IN_DEVELOPMENT
+          - DEPRECATED
+          - ARCHIVED
+        iconName:
+          type: string
+        colorHex:
+          type: string
+        ownerUserId:
+          type: string
+          format: uuid
+        repositoryUrl:
+          type: string
+        documentationUrl:
+          type: string
+        metadataJson:
+          type: string
+        createdByUserId:
+          type: string
+          format: uuid
+        memberCount:
+          type: integer
+          format: int32
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    UpdateSolutionMemberRequest:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+          - CORE
+          - SUPPORTING
+          - INFRASTRUCTURE
+          - EXTERNAL_DEPENDENCY
+        displayOrder:
+          type: integer
+          format: int32
+        notes:
+          maxLength: 500
+          minLength: 0
+          type: string
+    SolutionMemberResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        solutionId:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        serviceName:
+          type: string
+        serviceSlug:
+          type: string
+        serviceType:
+          type: string
+          enum:
+          - SPRING_BOOT_API
+          - FLUTTER_WEB
+          - FLUTTER_DESKTOP
+          - FLUTTER_MOBILE
+          - REACT_SPA
+          - VUE_SPA
+          - NEXT_JS
+          - EXPRESS_API
+          - FASTAPI
+          - DOTNET_API
+          - GO_API
+          - LIBRARY
+          - WORKER
+          - GATEWAY
+          - DATABASE_SERVICE
+          - MESSAGE_BROKER
+          - CACHE_SERVICE
+          - MCP_SERVER
+          - CLI_TOOL
+          - OTHER
+        serviceStatus:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+          - DEPRECATED
+          - ARCHIVED
+        serviceHealthStatus:
+          type: string
+          enum:
+          - UP
+          - DOWN
+          - DEGRADED
+          - UNKNOWN
+        role:
+          type: string
+          enum:
+          - CORE
+          - SUPPORTING
+          - INFRASTRUCTURE
+          - EXTERNAL_DEPENDENCY
+        displayOrder:
+          type: integer
+          format: int32
+        notes:
+          type: string
+    UpdateServiceRequest:
+      type: object
+      properties:
+        name:
+          maxLength: 100
+          minLength: 0
+          type: string
+        description:
+          maxLength: 5000
+          minLength: 0
+          type: string
+        repoUrl:
+          maxLength: 500
+          minLength: 0
+          type: string
+        repoFullName:
+          maxLength: 200
+          minLength: 0
+          type: string
+        defaultBranch:
+          maxLength: 50
+          minLength: 0
+          type: string
+        techStack:
+          maxLength: 500
+          minLength: 0
+          type: string
+        healthCheckUrl:
+          maxLength: 500
+          minLength: 0
+          type: string
+        healthCheckIntervalSeconds:
+          type: integer
+          format: int32
+        environmentsJson:
+          type: string
+        metadataJson:
+          type: string
+    ServiceRegistrationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        serviceType:
+          type: string
+          enum:
+          - SPRING_BOOT_API
+          - FLUTTER_WEB
+          - FLUTTER_DESKTOP
+          - FLUTTER_MOBILE
+          - REACT_SPA
+          - VUE_SPA
+          - NEXT_JS
+          - EXPRESS_API
+          - FASTAPI
+          - DOTNET_API
+          - GO_API
+          - LIBRARY
+          - WORKER
+          - GATEWAY
+          - DATABASE_SERVICE
+          - MESSAGE_BROKER
+          - CACHE_SERVICE
+          - MCP_SERVER
+          - CLI_TOOL
+          - OTHER
+        description:
+          type: string
+        repoUrl:
+          type: string
+        repoFullName:
+          type: string
+        defaultBranch:
+          type: string
+        techStack:
+          type: string
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+          - DEPRECATED
+          - ARCHIVED
+        healthCheckUrl:
+          type: string
+        healthCheckIntervalSeconds:
+          type: integer
+          format: int32
+        lastHealthStatus:
+          type: string
+          enum:
+          - UP
+          - DOWN
+          - DEGRADED
+          - UNKNOWN
+        lastHealthCheckAt:
+          type: string
+          format: date-time
+        environmentsJson:
+          type: string
+        metadataJson:
+          type: string
+        createdByUserId:
+          type: string
+          format: uuid
+        portCount:
+          type: integer
+          format: int32
+        dependencyCount:
+          type: integer
+          format: int32
+        solutionCount:
+          type: integer
+          format: int32
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    UpdatePortRangeRequest:
+      required:
+      - rangeEnd
+      - rangeStart
+      type: object
+      properties:
+        rangeStart:
+          type: integer
+          format: int32
+        rangeEnd:
+          type: integer
+          format: int32
+        description:
+          maxLength: 200
+          minLength: 0
+          type: string
+    PortRangeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+        portType:
+          type: string
+          enum:
+          - HTTP_API
+          - FRONTEND_DEV
+          - DATABASE
+          - REDIS
+          - KAFKA
+          - KAFKA_INTERNAL
+          - ZOOKEEPER
+          - GRPC
+          - WEBSOCKET
+          - DEBUG
+          - ACTUATOR
+          - CUSTOM
+        rangeStart:
+          type: integer
+          format: int32
+        rangeEnd:
+          type: integer
+          format: int32
+        environment:
+          type: string
+        description:
+          type: string
+    UpdateInfraResourceRequest:
+      type: object
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        resourceName:
+          maxLength: 300
+          minLength: 0
+          type: string
+        region:
+          maxLength: 30
+          minLength: 0
+          type: string
+        arnOrUrl:
+          maxLength: 500
+          minLength: 0
+          type: string
+        metadataJson:
+          type: string
+        description:
+          maxLength: 500
+          minLength: 0
+          type: string
+    InfraResourceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        serviceName:
+          type: string
+        serviceSlug:
+          type: string
+        resourceType:
+          type: string
+          enum:
+          - S3_BUCKET
+          - SQS_QUEUE
+          - SNS_TOPIC
+          - CLOUDWATCH_LOG_GROUP
+          - IAM_ROLE
+          - SECRETS_MANAGER_PATH
+          - SSM_PARAMETER
+          - RDS_INSTANCE
+          - ELASTICACHE_CLUSTER
+          - ECR_REPOSITORY
+          - CLOUD_MAP_NAMESPACE
+          - ROUTE53_RECORD
+          - ACM_CERTIFICATE
+          - ALB_TARGET_GROUP
+          - ECS_SERVICE
+          - LAMBDA_FUNCTION
+          - DYNAMODB_TABLE
+          - DOCKER_NETWORK
+          - DOCKER_VOLUME
+          - OTHER
+        resourceName:
+          type: string
+        environment:
+          type: string
+        region:
+          type: string
+        arnOrUrl:
+          type: string
+        metadataJson:
+          type: string
+        description:
+          type: string
+        createdByUserId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateWorkstationProfileRequest:
+      required:
+      - name
+      - teamId
+      type: object
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        name:
+          maxLength: 100
+          minLength: 0
+          type: string
+        description:
+          type: string
+        solutionId:
+          type: string
+          format: uuid
+        serviceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        isDefault:
+          type: boolean
+    CreateSolutionRequest:
+      required:
+      - category
+      - name
+      - teamId
+      type: object
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        name:
+          maxLength: 200
+          minLength: 0
+          type: string
+        slug:
+          type: string
+        description:
+          maxLength: 5000
+          minLength: 0
+          type: string
+        category:
+          type: string
+          enum:
+          - PLATFORM
+          - APPLICATION
+          - LIBRARY_SUITE
+          - INFRASTRUCTURE
+          - TOOLING
+          - OTHER
+        iconName:
+          maxLength: 50
+          minLength: 0
+          type: string
+        colorHex:
+          maxLength: 7
+          minLength: 0
+          type: string
+        ownerUserId:
+          type: string
+          format: uuid
+        repositoryUrl:
+          maxLength: 500
+          minLength: 0
+          type: string
+        documentationUrl:
+          maxLength: 500
+          minLength: 0
+          type: string
+        metadataJson:
+          type: string
+    CreateServiceRequest:
+      required:
+      - name
+      - serviceType
+      - teamId
+      type: object
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        name:
+          maxLength: 100
+          minLength: 0
+          type: string
+        slug:
+          type: string
+        serviceType:
+          type: string
+          enum:
+          - SPRING_BOOT_API
+          - FLUTTER_WEB
+          - FLUTTER_DESKTOP
+          - FLUTTER_MOBILE
+          - REACT_SPA
+          - VUE_SPA
+          - NEXT_JS
+          - EXPRESS_API
+          - FASTAPI
+          - DOTNET_API
+          - GO_API
+          - LIBRARY
+          - WORKER
+          - GATEWAY
+          - DATABASE_SERVICE
+          - MESSAGE_BROKER
+          - CACHE_SERVICE
+          - MCP_SERVER
+          - CLI_TOOL
+          - OTHER
+        description:
+          maxLength: 5000
+          minLength: 0
+          type: string
+        repoUrl:
+          maxLength: 500
+          minLength: 0
+          type: string
+        repoFullName:
+          maxLength: 200
+          minLength: 0
+          type: string
+        defaultBranch:
+          maxLength: 50
+          minLength: 0
+          type: string
+        techStack:
+          maxLength: 500
+          minLength: 0
+          type: string
+        healthCheckUrl:
+          maxLength: 500
+          minLength: 0
+          type: string
+        healthCheckIntervalSeconds:
+          type: integer
+          format: int32
+        environmentsJson:
+          type: string
+        metadataJson:
+          type: string
+        autoAllocatePortTypes:
+          type: array
+          items:
+            type: string
+            enum:
+            - HTTP_API
+            - FRONTEND_DEV
+            - DATABASE
+            - REDIS
+            - KAFKA
+            - KAFKA_INTERNAL
+            - ZOOKEEPER
+            - GRPC
+            - WEBSOCKET
+            - DEBUG
+            - ACTUATOR
+            - CUSTOM
+        autoAllocateEnvironment:
+          type: string
+    ServiceHealthResponse:
+      type: object
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        healthStatus:
+          type: string
+          enum:
+          - UP
+          - DOWN
+          - DEGRADED
+          - UNKNOWN
+        lastCheckAt:
+          type: string
+          format: date-time
+        healthCheckUrl:
+          type: string
+        responseTimeMs:
+          type: integer
+          format: int32
+        errorMessage:
+          type: string
+    CreateInfraResourceRequest:
+      required:
+      - environment
+      - resourceName
+      - resourceType
+      - teamId
+      type: object
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        resourceType:
+          type: string
+          enum:
+          - S3_BUCKET
+          - SQS_QUEUE
+          - SNS_TOPIC
+          - CLOUDWATCH_LOG_GROUP
+          - IAM_ROLE
+          - SECRETS_MANAGER_PATH
+          - SSM_PARAMETER
+          - RDS_INSTANCE
+          - ELASTICACHE_CLUSTER
+          - ECR_REPOSITORY
+          - CLOUD_MAP_NAMESPACE
+          - ROUTE53_RECORD
+          - ACM_CERTIFICATE
+          - ALB_TARGET_GROUP
+          - ECS_SERVICE
+          - LAMBDA_FUNCTION
+          - DYNAMODB_TABLE
+          - DOCKER_NETWORK
+          - DOCKER_VOLUME
+          - OTHER
+        resourceName:
+          maxLength: 300
+          minLength: 0
+          type: string
+        environment:
+          maxLength: 50
+          minLength: 0
+          type: string
+        region:
+          maxLength: 30
+          minLength: 0
+          type: string
+        arnOrUrl:
+          maxLength: 500
+          minLength: 0
+          type: string
+        metadataJson:
+          type: string
+        description:
+          maxLength: 500
+          minLength: 0
+          type: string
+    TeamHealthSummaryResponse:
+      type: object
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        totalServices:
+          type: integer
+          format: int32
+        activeServices:
+          type: integer
+          format: int32
+        servicesUp:
+          type: integer
+          format: int32
+        servicesDown:
+          type: integer
+          format: int32
+        servicesDegraded:
+          type: integer
+          format: int32
+        servicesUnknown:
+          type: integer
+          format: int32
+        servicesNeverChecked:
+          type: integer
+          format: int32
+        overallHealth:
+          type: string
+          enum:
+          - UP
+          - DOWN
+          - DEGRADED
+          - UNKNOWN
+        unhealthyServices:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceHealthResponse"
+        checkedAt:
+          type: string
+          format: date-time
+    AddSolutionMemberRequest:
+      required:
+      - role
+      - serviceId
+      type: object
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum:
+          - CORE
+          - SUPPORTING
+          - INFRASTRUCTURE
+          - EXTERNAL_DEPENDENCY
+        displayOrder:
+          type: integer
+          format: int32
+        notes:
+          maxLength: 500
+          minLength: 0
+          type: string
+    SolutionHealthResponse:
+      type: object
+      properties:
+        solutionId:
+          type: string
+          format: uuid
+        solutionName:
+          type: string
+        totalServices:
+          type: integer
+          format: int32
+        servicesUp:
+          type: integer
+          format: int32
+        servicesDown:
+          type: integer
+          format: int32
+        servicesDegraded:
+          type: integer
+          format: int32
+        servicesUnknown:
+          type: integer
+          format: int32
+        aggregatedHealth:
+          type: string
+          enum:
+          - UP
+          - DOWN
+          - DEGRADED
+          - UNKNOWN
+        serviceHealths:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceHealthResponse"
+    ConfigTemplateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        serviceName:
+          type: string
+        templateType:
+          type: string
+          enum:
+          - DOCKER_COMPOSE
+          - APPLICATION_YML
+          - APPLICATION_PROPERTIES
+          - ENV_FILE
+          - TERRAFORM_MODULE
+          - CLAUDE_CODE_HEADER
+          - CONVENTIONS_MD
+          - NGINX_CONF
+          - GITHUB_ACTIONS
+          - DOCKERFILE
+          - MAKEFILE
+          - README_SECTION
+        environment:
+          type: string
+        contentText:
+          type: string
+        isAutoGenerated:
+          type: boolean
+        generatedFrom:
+          type: string
+        version:
+          type: integer
+          format: int32
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CloneServiceRequest:
+      required:
+      - newName
+      type: object
+      properties:
+        newName:
+          maxLength: 100
+          minLength: 0
+          type: string
+        newSlug:
+          type: string
+    CreateRouteRequest:
+      required:
+      - environment
+      - routePrefix
+      - serviceId
+      type: object
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        gatewayServiceId:
+          type: string
+          format: uuid
+        routePrefix:
+          maxLength: 200
+          minLength: 0
+          type: string
+        httpMethods:
+          maxLength: 100
+          minLength: 0
+          type: string
+        environment:
+          maxLength: 50
+          minLength: 0
+          type: string
+        description:
+          maxLength: 500
+          minLength: 0
+          type: string
+    ApiRouteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        serviceName:
+          type: string
+        serviceSlug:
+          type: string
+        gatewayServiceId:
+          type: string
+          format: uuid
+        gatewayServiceName:
+          type: string
+        routePrefix:
+          type: string
+        httpMethods:
+          type: string
+        environment:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    AutoAllocatePortRequest:
+      required:
+      - environment
+      - portType
+      - serviceId
+      type: object
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        environment:
+          maxLength: 50
+          minLength: 0
+          type: string
+        portType:
+          type: string
+          enum:
+          - HTTP_API
+          - FRONTEND_DEV
+          - DATABASE
+          - REDIS
+          - KAFKA
+          - KAFKA_INTERNAL
+          - ZOOKEEPER
+          - GRPC
+          - WEBSOCKET
+          - DEBUG
+          - ACTUATOR
+          - CUSTOM
+        description:
+          maxLength: 200
+          minLength: 0
+          type: string
+    PortAllocationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        serviceName:
+          type: string
+        serviceSlug:
+          type: string
+        environment:
+          type: string
+        portType:
+          type: string
+          enum:
+          - HTTP_API
+          - FRONTEND_DEV
+          - DATABASE
+          - REDIS
+          - KAFKA
+          - KAFKA_INTERNAL
+          - ZOOKEEPER
+          - GRPC
+          - WEBSOCKET
+          - DEBUG
+          - ACTUATOR
+          - CUSTOM
+        portNumber:
+          type: integer
+          format: int32
+        protocol:
+          type: string
+        description:
+          type: string
+        isAutoAllocated:
+          type: boolean
+        allocatedByUserId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+    AllocatePortRequest:
+      required:
+      - environment
+      - portNumber
+      - portType
+      - serviceId
+      type: object
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        environment:
+          maxLength: 50
+          minLength: 0
+          type: string
+        portType:
+          type: string
+          enum:
+          - HTTP_API
+          - FRONTEND_DEV
+          - DATABASE
+          - REDIS
+          - KAFKA
+          - KAFKA_INTERNAL
+          - ZOOKEEPER
+          - GRPC
+          - WEBSOCKET
+          - DEBUG
+          - ACTUATOR
+          - CUSTOM
+        portNumber:
+          type: integer
+          format: int32
+        protocol:
+          maxLength: 10
+          minLength: 0
+          type: string
+        description:
+          maxLength: 200
+          minLength: 0
+          type: string
+    CreateDependencyRequest:
+      required:
+      - dependencyType
+      - sourceServiceId
+      - targetServiceId
+      type: object
+      properties:
+        sourceServiceId:
+          type: string
+          format: uuid
+        targetServiceId:
+          type: string
+          format: uuid
+        dependencyType:
+          type: string
+          enum:
+          - HTTP_REST
+          - GRPC
+          - KAFKA_TOPIC
+          - DATABASE_SHARED
+          - REDIS_SHARED
+          - LIBRARY
+          - GATEWAY_ROUTE
+          - WEBSOCKET
+          - FILE_SYSTEM
+          - OTHER
+        description:
+          maxLength: 500
+          minLength: 0
+          type: string
+        isRequired:
+          type: boolean
+        targetEndpoint:
+          maxLength: 500
+          minLength: 0
+          type: string
+    ServiceDependencyResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sourceServiceId:
+          type: string
+          format: uuid
+        sourceServiceName:
+          type: string
+        sourceServiceSlug:
+          type: string
+        targetServiceId:
+          type: string
+          format: uuid
+        targetServiceName:
+          type: string
+        targetServiceSlug:
+          type: string
+        dependencyType:
+          type: string
+          enum:
+          - HTTP_REST
+          - GRPC
+          - KAFKA_TOPIC
+          - DATABASE_SHARED
+          - REDIS_SHARED
+          - LIBRARY
+          - GATEWAY_ROUTE
+          - WEBSOCKET
+          - FILE_SYSTEM
+          - OTHER
+        description:
+          type: string
+        isRequired:
+          type: boolean
+        targetEndpoint:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    UpdateServiceStatusRequest:
+      required:
+      - status
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+          - DEPRECATED
+          - ARCHIVED
+    DependencyEdgeResponse:
+      type: object
+      properties:
+        sourceServiceId:
+          type: string
+          format: uuid
+        targetServiceId:
+          type: string
+          format: uuid
+        dependencyType:
+          type: string
+          enum:
+          - HTTP_REST
+          - GRPC
+          - KAFKA_TOPIC
+          - DATABASE_SHARED
+          - REDIS_SHARED
+          - LIBRARY
+          - GATEWAY_ROUTE
+          - WEBSOCKET
+          - FILE_SYSTEM
+          - OTHER
+        isRequired:
+          type: boolean
+        targetEndpoint:
+          type: string
+    TopologyLayerResponse:
+      type: object
+      properties:
+        layer:
+          type: string
+        serviceCount:
+          type: integer
+          format: int32
+        serviceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+    TopologyNodeResponse:
+      type: object
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        serviceType:
+          type: string
+          enum:
+          - SPRING_BOOT_API
+          - FLUTTER_WEB
+          - FLUTTER_DESKTOP
+          - FLUTTER_MOBILE
+          - REACT_SPA
+          - VUE_SPA
+          - NEXT_JS
+          - EXPRESS_API
+          - FASTAPI
+          - DOTNET_API
+          - GO_API
+          - LIBRARY
+          - WORKER
+          - GATEWAY
+          - DATABASE_SERVICE
+          - MESSAGE_BROKER
+          - CACHE_SERVICE
+          - MCP_SERVER
+          - CLI_TOOL
+          - OTHER
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+          - DEPRECATED
+          - ARCHIVED
+        healthStatus:
+          type: string
+          enum:
+          - UP
+          - DOWN
+          - DEGRADED
+          - UNKNOWN
+        portCount:
+          type: integer
+          format: int32
+        upstreamDependencyCount:
+          type: integer
+          format: int32
+        downstreamDependencyCount:
+          type: integer
+          format: int32
+        solutionIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        layer:
+          type: string
+    TopologyResponse:
+      type: object
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopologyNodeResponse"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/DependencyEdgeResponse"
+        solutionGroups:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopologySolutionGroup"
+        layers:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopologyLayerResponse"
+        stats:
+          $ref: "#/components/schemas/TopologyStatsResponse"
+    TopologySolutionGroup:
+      type: object
+      properties:
+        solutionId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - IN_DEVELOPMENT
+          - DEPRECATED
+          - ARCHIVED
+        memberCount:
+          type: integer
+          format: int32
+        serviceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+    TopologyStatsResponse:
+      type: object
+      properties:
+        totalServices:
+          type: integer
+          format: int32
+        totalDependencies:
+          type: integer
+          format: int32
+        totalSolutions:
+          type: integer
+          format: int32
+        servicesWithNoDependencies:
+          type: integer
+          format: int32
+        servicesWithNoConsumers:
+          type: integer
+          format: int32
+        orphanedServices:
+          type: integer
+          format: int32
+        maxDependencyDepth:
+          type: integer
+          format: int32
+    Pageable:
+      type: object
+      properties:
+        page:
+          minimum: 0
+          type: integer
+          format: int32
+        size:
+          minimum: 1
+          type: integer
+          format: int32
+        sort:
+          type: array
+          items:
+            type: string
+    PageResponseSolutionResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/SolutionResponse"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        isLast:
+          type: boolean
+    PageResponseServiceRegistrationResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceRegistrationResponse"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        isLast:
+          type: boolean
+    PortMapResponse:
+      type: object
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        environment:
+          type: string
+        ranges:
+          type: array
+          items:
+            $ref: "#/components/schemas/PortRangeWithAllocationsResponse"
+        totalAllocated:
+          type: integer
+          format: int32
+        totalAvailable:
+          type: integer
+          format: int32
+    PortRangeWithAllocationsResponse:
+      type: object
+      properties:
+        portType:
+          type: string
+          enum:
+          - HTTP_API
+          - FRONTEND_DEV
+          - DATABASE
+          - REDIS
+          - KAFKA
+          - KAFKA_INTERNAL
+          - ZOOKEEPER
+          - GRPC
+          - WEBSOCKET
+          - DEBUG
+          - ACTUATOR
+          - CUSTOM
+        rangeStart:
+          type: integer
+          format: int32
+        rangeEnd:
+          type: integer
+          format: int32
+        totalCapacity:
+          type: integer
+          format: int32
+        allocated:
+          type: integer
+          format: int32
+        available:
+          type: integer
+          format: int32
+        allocations:
+          type: array
+          items:
+            $ref: "#/components/schemas/PortAllocationResponse"
+    PortConflictResponse:
+      type: object
+      properties:
+        portNumber:
+          type: integer
+          format: int32
+        environment:
+          type: string
+        conflictingAllocations:
+          type: array
+          items:
+            $ref: "#/components/schemas/PortAllocationResponse"
+    PortCheckResponse:
+      type: object
+      properties:
+        portNumber:
+          type: integer
+          format: int32
+        environment:
+          type: string
+        available:
+          type: boolean
+        currentOwnerServiceId:
+          type: string
+          format: uuid
+        currentOwnerServiceName:
+          type: string
+        currentOwnerPortType:
+          type: string
+          enum:
+          - HTTP_API
+          - FRONTEND_DEV
+          - DATABASE
+          - REDIS
+          - KAFKA
+          - KAFKA_INTERNAL
+          - ZOOKEEPER
+          - GRPC
+          - WEBSOCKET
+          - DEBUG
+          - ACTUATOR
+          - CUSTOM
+    PageResponseInfraResourceResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/InfraResourceResponse"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        isLast:
+          type: boolean
+    DependencyNodeResponse:
+      type: object
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        serviceType:
+          type: string
+          enum:
+          - SPRING_BOOT_API
+          - FLUTTER_WEB
+          - FLUTTER_DESKTOP
+          - FLUTTER_MOBILE
+          - REACT_SPA
+          - VUE_SPA
+          - NEXT_JS
+          - EXPRESS_API
+          - FASTAPI
+          - DOTNET_API
+          - GO_API
+          - LIBRARY
+          - WORKER
+          - GATEWAY
+          - DATABASE_SERVICE
+          - MESSAGE_BROKER
+          - CACHE_SERVICE
+          - MCP_SERVER
+          - CLI_TOOL
+          - OTHER
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+          - DEPRECATED
+          - ARCHIVED
+        healthStatus:
+          type: string
+          enum:
+          - UP
+          - DOWN
+          - DEGRADED
+          - UNKNOWN
+    DependencyGraphResponse:
+      type: object
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/DependencyNodeResponse"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/DependencyEdgeResponse"
+    SolutionDetailResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum:
+          - PLATFORM
+          - APPLICATION
+          - LIBRARY_SUITE
+          - INFRASTRUCTURE
+          - TOOLING
+          - OTHER
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - IN_DEVELOPMENT
+          - DEPRECATED
+          - ARCHIVED
+        iconName:
+          type: string
+        colorHex:
+          type: string
+        ownerUserId:
+          type: string
+          format: uuid
+        repositoryUrl:
+          type: string
+        documentationUrl:
+          type: string
+        metadataJson:
+          type: string
+        createdByUserId:
+          type: string
+          format: uuid
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/SolutionMemberResponse"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    EnvironmentConfigResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        environment:
+          type: string
+        configKey:
+          type: string
+        configValue:
+          type: string
+        configSource:
+          type: string
+          enum:
+          - AUTO_GENERATED
+          - MANUAL
+          - INHERITED
+          - REGISTRY_DERIVED
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ServiceIdentityResponse:
+      type: object
+      properties:
+        service:
+          $ref: "#/components/schemas/ServiceRegistrationResponse"
+        ports:
+          type: array
+          items:
+            $ref: "#/components/schemas/PortAllocationResponse"
+        upstreamDependencies:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceDependencyResponse"
+        downstreamDependencies:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceDependencyResponse"
+        routes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiRouteResponse"
+        infraResources:
+          type: array
+          items:
+            $ref: "#/components/schemas/InfraResourceResponse"
+        environmentConfigs:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnvironmentConfigResponse"
+    ImpactAnalysisResponse:
+      type: object
+      properties:
+        sourceServiceId:
+          type: string
+          format: uuid
+        sourceServiceName:
+          type: string
+        impactedServices:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImpactedServiceResponse"
+        totalAffected:
+          type: integer
+          format: int32
+    ImpactedServiceResponse:
+      type: object
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        serviceName:
+          type: string
+        serviceSlug:
+          type: string
+        depth:
+          type: integer
+          format: int32
+        connectionType:
+          type: string
+          enum:
+          - HTTP_REST
+          - GRPC
+          - KAFKA_TOPIC
+          - DATABASE_SHARED
+          - REDIS_SHARED
+          - LIBRARY
+          - GATEWAY_ROUTE
+          - WEBSOCKET
+          - FILE_SYSTEM
+          - OTHER
+        isRequired:
+          type: boolean
+    RouteCheckResponse:
+      type: object
+      properties:
+        routePrefix:
+          type: string
+        environment:
+          type: string
+        available:
+          type: boolean
+        conflictingRoutes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiRouteResponse"
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-
-  parameters:
-    teamId:
-      name: teamId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
-    serviceId:
-      name: serviceId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
-    solutionId:
-      name: solutionId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
-    page:
-      name: page
-      in: query
-      schema:
-        type: integer
-        default: 0
-    size:
-      name: size
-      in: query
-      schema:
-        type: integer
-        default: 20
-        maximum: 100
-
-  responses:
-    BadRequest:
-      description: Validation error
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Authentication required
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Resource not found
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-
-  schemas:
-    # ── ENUMS ──
-    ServiceType:
-      type: string
-      enum: [SPRING_BOOT_API, FLUTTER_WEB, FLUTTER_DESKTOP, FLUTTER_MOBILE, REACT_SPA, VUE_SPA, NEXT_JS, EXPRESS_API, FASTAPI, DOTNET_API, GO_API, LIBRARY, WORKER, GATEWAY, DATABASE_SERVICE, MESSAGE_BROKER, CACHE_SERVICE, MCP_SERVER, CLI_TOOL, OTHER]
-    ServiceStatus:
-      type: string
-      enum: [ACTIVE, INACTIVE, DEPRECATED, ARCHIVED]
-    HealthStatus:
-      type: string
-      enum: [UP, DOWN, DEGRADED, UNKNOWN]
-    PortType:
-      type: string
-      enum: [HTTP_API, FRONTEND_DEV, DATABASE, REDIS, KAFKA, KAFKA_INTERNAL, ZOOKEEPER, GRPC, WEBSOCKET, DEBUG, ACTUATOR, CUSTOM]
-    DependencyType:
-      type: string
-      enum: [HTTP_REST, GRPC, KAFKA_TOPIC, DATABASE_SHARED, REDIS_SHARED, LIBRARY, GATEWAY_ROUTE, WEBSOCKET, FILE_SYSTEM, OTHER]
-    SolutionCategory:
-      type: string
-      enum: [PLATFORM, APPLICATION, LIBRARY_SUITE, INFRASTRUCTURE, TOOLING, OTHER]
-    SolutionStatus:
-      type: string
-      enum: [ACTIVE, IN_DEVELOPMENT, DEPRECATED, ARCHIVED]
-    SolutionMemberRole:
-      type: string
-      enum: [CORE, SUPPORTING, INFRASTRUCTURE, EXTERNAL_DEPENDENCY]
-    ConfigSource:
-      type: string
-      enum: [AUTO_GENERATED, MANUAL, INHERITED, REGISTRY_DERIVED]
-    ConfigTemplateType:
-      type: string
-      enum: [DOCKER_COMPOSE, APPLICATION_YML, APPLICATION_PROPERTIES, ENV_FILE, TERRAFORM_MODULE, CLAUDE_CODE_HEADER, CONVENTIONS_MD, NGINX_CONF, GITHUB_ACTIONS, DOCKERFILE, MAKEFILE, README_SECTION]
-    InfraResourceType:
-      type: string
-      enum: [S3_BUCKET, SQS_QUEUE, SNS_TOPIC, CLOUDWATCH_LOG_GROUP, IAM_ROLE, SECRETS_MANAGER_PATH, SSM_PARAMETER, RDS_INSTANCE, ELASTICACHE_CLUSTER, ECR_REPOSITORY, CLOUD_MAP_NAMESPACE, ROUTE53_RECORD, ACM_CERTIFICATE, ALB_TARGET_GROUP, ECS_SERVICE, LAMBDA_FUNCTION, DYNAMODB_TABLE, DOCKER_NETWORK, DOCKER_VOLUME, OTHER]
-
-    # ── REQUEST DTOs ──
-    CreateServiceRequest:
-      type: object
-      required: [teamId, name, serviceType]
-      properties:
-        teamId: { type: string, format: uuid }
-        name: { type: string, maxLength: 100 }
-        slug: { type: string }
-        serviceType: { $ref: '#/components/schemas/ServiceType' }
-        description: { type: string, maxLength: 5000 }
-        repoUrl: { type: string, maxLength: 500 }
-        repoFullName: { type: string, maxLength: 200 }
-        defaultBranch: { type: string, maxLength: 50 }
-        techStack: { type: string, maxLength: 500 }
-        healthCheckUrl: { type: string, maxLength: 500 }
-        healthCheckIntervalSeconds: { type: integer, format: int32 }
-        environmentsJson: { type: string }
-        metadataJson: { type: string }
-        autoAllocatePortTypes:
-          type: array
-          items: { $ref: '#/components/schemas/PortType' }
-        autoAllocateEnvironment: { type: string }
-
-    UpdateServiceRequest:
-      type: object
-      properties:
-        name: { type: string, maxLength: 100 }
-        description: { type: string, maxLength: 5000 }
-        repoUrl: { type: string, maxLength: 500 }
-        repoFullName: { type: string, maxLength: 200 }
-        defaultBranch: { type: string, maxLength: 50 }
-        techStack: { type: string, maxLength: 500 }
-        healthCheckUrl: { type: string, maxLength: 500 }
-        healthCheckIntervalSeconds: { type: integer, format: int32 }
-        environmentsJson: { type: string }
-        metadataJson: { type: string }
-
-    UpdateServiceStatusRequest:
-      type: object
-      required: [status]
-      properties:
-        status: { $ref: '#/components/schemas/ServiceStatus' }
-
-    CloneServiceRequest:
-      type: object
-      required: [newName]
-      properties:
-        newName: { type: string, maxLength: 100 }
-        newSlug: { type: string }
-
-    AllocatePortRequest:
-      type: object
-      required: [serviceId, environment, portType, portNumber]
-      properties:
-        serviceId: { type: string, format: uuid }
-        environment: { type: string, maxLength: 50 }
-        portType: { $ref: '#/components/schemas/PortType' }
-        portNumber: { type: integer, format: int32 }
-        protocol: { type: string, maxLength: 10 }
-        description: { type: string, maxLength: 200 }
-
-    AutoAllocatePortRequest:
-      type: object
-      required: [serviceId, environment, portType]
-      properties:
-        serviceId: { type: string, format: uuid }
-        environment: { type: string, maxLength: 50 }
-        portType: { $ref: '#/components/schemas/PortType' }
-        description: { type: string, maxLength: 200 }
-
-    UpdatePortRangeRequest:
-      type: object
-      required: [rangeStart, rangeEnd]
-      properties:
-        rangeStart: { type: integer, format: int32 }
-        rangeEnd: { type: integer, format: int32 }
-        description: { type: string, maxLength: 200 }
-
-    CreateDependencyRequest:
-      type: object
-      required: [sourceServiceId, targetServiceId, dependencyType]
-      properties:
-        sourceServiceId: { type: string, format: uuid }
-        targetServiceId: { type: string, format: uuid }
-        dependencyType: { $ref: '#/components/schemas/DependencyType' }
-        description: { type: string, maxLength: 500 }
-        isRequired: { type: boolean }
-        targetEndpoint: { type: string, maxLength: 500 }
-
-    CreateSolutionRequest:
-      type: object
-      required: [teamId, name, category]
-      properties:
-        teamId: { type: string, format: uuid }
-        name: { type: string, maxLength: 200 }
-        slug: { type: string }
-        description: { type: string, maxLength: 5000 }
-        category: { $ref: '#/components/schemas/SolutionCategory' }
-        iconName: { type: string, maxLength: 50 }
-        colorHex: { type: string, maxLength: 7 }
-        ownerUserId: { type: string, format: uuid }
-        repositoryUrl: { type: string, maxLength: 500 }
-        documentationUrl: { type: string, maxLength: 500 }
-        metadataJson: { type: string }
-
-    UpdateSolutionRequest:
-      type: object
-      properties:
-        name: { type: string, maxLength: 200 }
-        description: { type: string, maxLength: 5000 }
-        category: { $ref: '#/components/schemas/SolutionCategory' }
-        status: { $ref: '#/components/schemas/SolutionStatus' }
-        iconName: { type: string, maxLength: 50 }
-        colorHex: { type: string, maxLength: 7 }
-        ownerUserId: { type: string, format: uuid }
-        repositoryUrl: { type: string, maxLength: 500 }
-        documentationUrl: { type: string, maxLength: 500 }
-        metadataJson: { type: string }
-
-    AddSolutionMemberRequest:
-      type: object
-      required: [serviceId, role]
-      properties:
-        serviceId: { type: string, format: uuid }
-        role: { $ref: '#/components/schemas/SolutionMemberRole' }
-        displayOrder: { type: integer, format: int32 }
-        notes: { type: string, maxLength: 500 }
-
-    UpdateSolutionMemberRequest:
-      type: object
-      properties:
-        role: { $ref: '#/components/schemas/SolutionMemberRole' }
-        displayOrder: { type: integer, format: int32 }
-        notes: { type: string, maxLength: 500 }
-
-    CreateRouteRequest:
-      type: object
-      required: [serviceId, routePrefix, environment]
-      properties:
-        serviceId: { type: string, format: uuid }
-        gatewayServiceId: { type: string, format: uuid }
-        routePrefix: { type: string, maxLength: 200 }
-        httpMethods: { type: string, maxLength: 100 }
-        environment: { type: string, maxLength: 50 }
-        description: { type: string, maxLength: 500 }
-
-    CreateInfraResourceRequest:
-      type: object
-      required: [teamId, resourceType, resourceName, environment]
-      properties:
-        teamId: { type: string, format: uuid }
-        serviceId: { type: string, format: uuid }
-        resourceType: { $ref: '#/components/schemas/InfraResourceType' }
-        resourceName: { type: string, maxLength: 300 }
-        environment: { type: string, maxLength: 50 }
-        region: { type: string, maxLength: 30 }
-        arnOrUrl: { type: string, maxLength: 500 }
-        metadataJson: { type: string }
-        description: { type: string, maxLength: 500 }
-
-    UpdateInfraResourceRequest:
-      type: object
-      properties:
-        serviceId: { type: string, format: uuid }
-        resourceName: { type: string, maxLength: 300 }
-        region: { type: string, maxLength: 30 }
-        arnOrUrl: { type: string, maxLength: 500 }
-        metadataJson: { type: string }
-        description: { type: string, maxLength: 500 }
-
-    # ── RESPONSE DTOs ──
-    ErrorResponse:
-      type: object
-      properties:
-        status: { type: integer, format: int32 }
-        message: { type: string }
-
-    ServiceRegistrationResponse:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        teamId: { type: string, format: uuid }
-        name: { type: string }
-        slug: { type: string }
-        serviceType: { $ref: '#/components/schemas/ServiceType' }
-        description: { type: string }
-        repoUrl: { type: string }
-        repoFullName: { type: string }
-        defaultBranch: { type: string }
-        techStack: { type: string }
-        status: { $ref: '#/components/schemas/ServiceStatus' }
-        healthCheckUrl: { type: string }
-        healthCheckIntervalSeconds: { type: integer }
-        lastHealthStatus: { $ref: '#/components/schemas/HealthStatus' }
-        lastHealthCheckAt: { type: string, format: date-time }
-        environmentsJson: { type: string }
-        metadataJson: { type: string }
-        createdByUserId: { type: string, format: uuid }
-        portCount: { type: integer }
-        dependencyCount: { type: integer }
-        solutionCount: { type: integer }
-        createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
-
-    ServiceIdentityResponse:
-      type: object
-      properties:
-        service: { $ref: '#/components/schemas/ServiceRegistrationResponse' }
-        ports:
-          type: array
-          items: { $ref: '#/components/schemas/PortAllocationResponse' }
-        upstreamDependencies:
-          type: array
-          items: { $ref: '#/components/schemas/ServiceDependencyResponse' }
-        downstreamDependencies:
-          type: array
-          items: { $ref: '#/components/schemas/ServiceDependencyResponse' }
-        routes:
-          type: array
-          items: { $ref: '#/components/schemas/ApiRouteResponse' }
-        infraResources:
-          type: array
-          items: { $ref: '#/components/schemas/InfraResourceResponse' }
-        environmentConfigs:
-          type: array
-          items: { $ref: '#/components/schemas/EnvironmentConfigResponse' }
-
-    ServiceHealthResponse:
-      type: object
-      properties:
-        serviceId: { type: string, format: uuid }
-        name: { type: string }
-        slug: { type: string }
-        healthStatus: { $ref: '#/components/schemas/HealthStatus' }
-        lastCheckAt: { type: string, format: date-time }
-        healthCheckUrl: { type: string }
-        responseTimeMs: { type: integer }
-        errorMessage: { type: string }
-
-    PortAllocationResponse:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        serviceId: { type: string, format: uuid }
-        serviceName: { type: string }
-        serviceSlug: { type: string }
-        environment: { type: string }
-        portType: { $ref: '#/components/schemas/PortType' }
-        portNumber: { type: integer }
-        protocol: { type: string }
-        description: { type: string }
-        isAutoAllocated: { type: boolean }
-        allocatedByUserId: { type: string, format: uuid }
-        createdAt: { type: string, format: date-time }
-
-    PortCheckResponse:
-      type: object
-      properties:
-        portNumber: { type: integer }
-        environment: { type: string }
-        available: { type: boolean }
-        currentOwnerServiceId: { type: string, format: uuid }
-        currentOwnerServiceName: { type: string }
-        currentOwnerPortType: { $ref: '#/components/schemas/PortType' }
-
-    PortConflictResponse:
-      type: object
-      properties:
-        portNumber: { type: integer }
-        environment: { type: string }
-        conflictingAllocations:
-          type: array
-          items: { $ref: '#/components/schemas/PortAllocationResponse' }
-
-    PortMapResponse:
-      type: object
-      properties:
-        teamId: { type: string, format: uuid }
-        environment: { type: string }
-        ranges:
-          type: array
-          items: { $ref: '#/components/schemas/PortRangeWithAllocationsResponse' }
-        totalAllocated: { type: integer }
-        totalAvailable: { type: integer }
-
-    PortRangeResponse:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        teamId: { type: string, format: uuid }
-        portType: { $ref: '#/components/schemas/PortType' }
-        rangeStart: { type: integer }
-        rangeEnd: { type: integer }
-        environment: { type: string }
-        description: { type: string }
-
-    PortRangeWithAllocationsResponse:
-      type: object
-      properties:
-        portType: { $ref: '#/components/schemas/PortType' }
-        rangeStart: { type: integer }
-        rangeEnd: { type: integer }
-        totalCapacity: { type: integer }
-        allocated: { type: integer }
-        available: { type: integer }
-        allocations:
-          type: array
-          items: { $ref: '#/components/schemas/PortAllocationResponse' }
-
-    ServiceDependencyResponse:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        sourceServiceId: { type: string, format: uuid }
-        sourceServiceName: { type: string }
-        sourceServiceSlug: { type: string }
-        targetServiceId: { type: string, format: uuid }
-        targetServiceName: { type: string }
-        targetServiceSlug: { type: string }
-        dependencyType: { $ref: '#/components/schemas/DependencyType' }
-        description: { type: string }
-        isRequired: { type: boolean }
-        targetEndpoint: { type: string }
-        createdAt: { type: string, format: date-time }
-
-    DependencyGraphResponse:
-      type: object
-      properties:
-        teamId: { type: string, format: uuid }
-        nodes:
-          type: array
-          items: { $ref: '#/components/schemas/DependencyNodeResponse' }
-        edges:
-          type: array
-          items: { $ref: '#/components/schemas/DependencyEdgeResponse' }
-
-    DependencyNodeResponse:
-      type: object
-      properties:
-        serviceId: { type: string, format: uuid }
-        name: { type: string }
-        slug: { type: string }
-        serviceType: { $ref: '#/components/schemas/ServiceType' }
-        status: { $ref: '#/components/schemas/ServiceStatus' }
-        healthStatus: { $ref: '#/components/schemas/HealthStatus' }
-
-    DependencyEdgeResponse:
-      type: object
-      properties:
-        sourceServiceId: { type: string, format: uuid }
-        targetServiceId: { type: string, format: uuid }
-        dependencyType: { $ref: '#/components/schemas/DependencyType' }
-        isRequired: { type: boolean }
-        targetEndpoint: { type: string }
-
-    ImpactAnalysisResponse:
-      type: object
-      properties:
-        sourceServiceId: { type: string, format: uuid }
-        sourceServiceName: { type: string }
-        impactedServices:
-          type: array
-          items: { $ref: '#/components/schemas/ImpactedServiceResponse' }
-        totalAffected: { type: integer }
-
-    ImpactedServiceResponse:
-      type: object
-      properties:
-        serviceId: { type: string, format: uuid }
-        serviceName: { type: string }
-        serviceSlug: { type: string }
-        depth: { type: integer }
-        connectionType: { $ref: '#/components/schemas/DependencyType' }
-        isRequired: { type: boolean }
-
-    SolutionResponse:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        teamId: { type: string, format: uuid }
-        name: { type: string }
-        slug: { type: string }
-        description: { type: string }
-        category: { $ref: '#/components/schemas/SolutionCategory' }
-        status: { $ref: '#/components/schemas/SolutionStatus' }
-        iconName: { type: string }
-        colorHex: { type: string }
-        ownerUserId: { type: string, format: uuid }
-        repositoryUrl: { type: string }
-        documentationUrl: { type: string }
-        metadataJson: { type: string }
-        createdByUserId: { type: string, format: uuid }
-        memberCount: { type: integer }
-        createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
-
-    SolutionDetailResponse:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        teamId: { type: string, format: uuid }
-        name: { type: string }
-        slug: { type: string }
-        description: { type: string }
-        category: { $ref: '#/components/schemas/SolutionCategory' }
-        status: { $ref: '#/components/schemas/SolutionStatus' }
-        iconName: { type: string }
-        colorHex: { type: string }
-        ownerUserId: { type: string, format: uuid }
-        repositoryUrl: { type: string }
-        documentationUrl: { type: string }
-        metadataJson: { type: string }
-        createdByUserId: { type: string, format: uuid }
-        members:
-          type: array
-          items: { $ref: '#/components/schemas/SolutionMemberResponse' }
-        createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
-
-    SolutionMemberResponse:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        solutionId: { type: string, format: uuid }
-        serviceId: { type: string, format: uuid }
-        serviceName: { type: string }
-        serviceSlug: { type: string }
-        serviceType: { $ref: '#/components/schemas/ServiceType' }
-        serviceStatus: { $ref: '#/components/schemas/ServiceStatus' }
-        serviceHealthStatus: { $ref: '#/components/schemas/HealthStatus' }
-        role: { $ref: '#/components/schemas/SolutionMemberRole' }
-        displayOrder: { type: integer }
-        notes: { type: string }
-
-    SolutionHealthResponse:
-      type: object
-      properties:
-        solutionId: { type: string, format: uuid }
-        solutionName: { type: string }
-        totalServices: { type: integer }
-        servicesUp: { type: integer }
-        servicesDown: { type: integer }
-        servicesDegraded: { type: integer }
-        servicesUnknown: { type: integer }
-        aggregatedHealth: { $ref: '#/components/schemas/HealthStatus' }
-        serviceHealths:
-          type: array
-          items: { $ref: '#/components/schemas/ServiceHealthResponse' }
-
-    ApiRouteResponse:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        serviceId: { type: string, format: uuid }
-        serviceName: { type: string }
-        serviceSlug: { type: string }
-        gatewayServiceId: { type: string, format: uuid }
-        gatewayServiceName: { type: string }
-        routePrefix: { type: string }
-        httpMethods: { type: string }
-        environment: { type: string }
-        description: { type: string }
-        createdAt: { type: string, format: date-time }
-
-    RouteCheckResponse:
-      type: object
-      properties:
-        routePrefix: { type: string }
-        environment: { type: string }
-        available: { type: boolean }
-        conflictingRoutes:
-          type: array
-          items: { $ref: '#/components/schemas/ApiRouteResponse' }
-
-    InfraResourceResponse:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        teamId: { type: string, format: uuid }
-        serviceId: { type: string, format: uuid }
-        serviceName: { type: string }
-        serviceSlug: { type: string }
-        resourceType: { $ref: '#/components/schemas/InfraResourceType' }
-        resourceName: { type: string }
-        environment: { type: string }
-        region: { type: string }
-        arnOrUrl: { type: string }
-        metadataJson: { type: string }
-        description: { type: string }
-        createdByUserId: { type: string, format: uuid }
-        createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
-
-    EnvironmentConfigResponse:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        serviceId: { type: string, format: uuid }
-        environment: { type: string }
-        configKey: { type: string }
-        configValue: { type: string }
-        configSource: { $ref: '#/components/schemas/ConfigSource' }
-        description: { type: string }
-        createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
-
-    # ── PAGE WRAPPERS ──
-    PageServiceRegistrationResponse:
-      type: object
-      properties:
-        content:
-          type: array
-          items: { $ref: '#/components/schemas/ServiceRegistrationResponse' }
-        page: { type: integer }
-        size: { type: integer }
-        totalElements: { type: integer, format: int64 }
-        totalPages: { type: integer }
-        isLast: { type: boolean }
-
-    PageSolutionResponse:
-      type: object
-      properties:
-        content:
-          type: array
-          items: { $ref: '#/components/schemas/SolutionResponse' }
-        page: { type: integer }
-        size: { type: integer }
-        totalElements: { type: integer, format: int64 }
-        totalPages: { type: integer }
-        isLast: { type: boolean }
-
-    PageInfraResourceResponse:
-      type: object
-      properties:
-        content:
-          type: array
-          items: { $ref: '#/components/schemas/InfraResourceResponse' }
-        page: { type: integer }
-        size: { type: integer }
-        totalElements: { type: integer, format: int64 }
-        totalPages: { type: integer }
-        isLast: { type: boolean }

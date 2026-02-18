@@ -1,16 +1,23 @@
 package com.codeops.registry.config;
 
+import java.util.UUID;
+
 /**
  * Application-wide constants for the CodeOps Registry service.
  *
  * <p>Defines pagination defaults, port allocation ranges, slug validation rules,
- * health check parameters, and per-team resource limits. These values are used
- * across services and controllers to enforce consistent business rules.</p>
+ * health check parameters, per-team resource limits, and seed data identifiers.
+ * These values are used across services and controllers to enforce consistent
+ * business rules.</p>
  *
  * <p>This class cannot be instantiated.</p>
  */
 public final class AppConstants {
     private AppConstants() {}
+
+    // Seed data identifiers
+    public static final UUID SEED_TEAM_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    public static final UUID SEED_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
 
     // Pagination
     public static final int DEFAULT_PAGE_SIZE = 20;
