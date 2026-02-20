@@ -1,0 +1,4107 @@
+openapi: 3.0.3
+info:
+  title: CodeOps Registry API
+  description: Service registry for CodeOps platform — manages services, solutions, ports, dependencies, routes, config, health, infra resources, topology, and workstation profiles.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8096
+    description: Local development server
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Health
+    description: Health check endpoint (public, no auth)
+  - name: Services
+    description: Service registration and management
+  - name: Solutions
+    description: Solution grouping and membership management
+  - name: Ports
+    description: Port allocation, ranges, and conflict detection
+  - name: Dependencies
+    description: Service dependency graph and impact analysis
+  - name: Routes
+    description: API route registration and conflict detection
+  - name: Config
+    description: Configuration template generation and management
+  - name: Health Management
+    description: Team and solution health monitoring
+  - name: InfraResources
+    description: Infrastructure resource tracking
+  - name: Topology
+    description: Service topology visualization
+  - name: Profiles
+    description: Workstation profile management
+
+paths:
+  # ──────────────────────────────────────────────────────────────
+  # Health
+  # ──────────────────────────────────────────────────────────────
+  /api/v1/health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Returns the health status of the Registry service. Public endpoint — no authentication required.
+      operationId: healthCheck
+      security: []
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthCheckResponse"
+
+  # ──────────────────────────────────────────────────────────────
+  # Services
+  # ──────────────────────────────────────────────────────────────
+  /api/v1/registry/teams/{teamId}/services:
+    post:
+      tags:
+        - Services
+      summary: Register a new service
+      operationId: createService
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceRequest"
+      responses:
+        "201":
+          description: Service registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRegistrationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    get:
+      tags:
+        - Services
+      summary: List services for a team
+      operationId: getTeamServices
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ServiceStatus"
+        - name: type
+          in: query
+          schema:
+            $ref: "#/components/schemas/ServiceType"
+        - name: search
+          in: query
+          schema:
+            type: string
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/size"
+        - $ref: "#/components/parameters/sort"
+      responses:
+        "200":
+          description: Paginated list of services
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageResponseServiceRegistrationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/services/{serviceId}:
+    get:
+      tags:
+        - Services
+      summary: Get a service by ID
+      operationId: getService
+      parameters:
+        - $ref: "#/components/parameters/serviceIdPath"
+      responses:
+        "200":
+          description: Service details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRegistrationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      tags:
+        - Services
+      summary: Update a service
+      operationId: updateService
+      parameters:
+        - $ref: "#/components/parameters/serviceIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateServiceRequest"
+      responses:
+        "200":
+          description: Service updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRegistrationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags:
+        - Services
+      summary: Delete a service
+      operationId: deleteService
+      parameters:
+        - $ref: "#/components/parameters/serviceIdPath"
+      responses:
+        "204":
+          description: Service deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/services/{serviceId}/status:
+    patch:
+      tags:
+        - Services
+      summary: Update a service's status
+      operationId: updateServiceStatus
+      parameters:
+        - $ref: "#/components/parameters/serviceIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateServiceStatusRequest"
+      responses:
+        "200":
+          description: Service status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRegistrationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/services/{serviceId}/clone:
+    post:
+      tags:
+        - Services
+      summary: Clone a service
+      operationId: cloneService
+      parameters:
+        - $ref: "#/components/parameters/serviceIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CloneServiceRequest"
+      responses:
+        "201":
+          description: Service cloned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRegistrationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/services/{serviceId}/identity:
+    get:
+      tags:
+        - Services
+      summary: Get full service identity (ports, deps, routes, infra, configs)
+      operationId: getServiceIdentity
+      parameters:
+        - $ref: "#/components/parameters/serviceIdPath"
+        - name: environment
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Full service identity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceIdentityResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/services/{serviceId}/health:
+    post:
+      tags:
+        - Services
+      summary: Check health of a single service
+      operationId: checkServiceHealth
+      parameters:
+        - $ref: "#/components/parameters/serviceIdPath"
+      responses:
+        "200":
+          description: Service health result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceHealthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/teams/{teamId}/services/health:
+    post:
+      tags:
+        - Services
+      summary: Check health of all services for a team
+      operationId: checkTeamServicesHealth
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      responses:
+        "200":
+          description: Array of service health results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceHealthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/teams/{teamId}/services/by-slug/{slug}:
+    get:
+      tags:
+        - Services
+      summary: Get a service by its slug within a team
+      operationId: getServiceBySlug
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Service details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRegistrationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ──────────────────────────────────────────────────────────────
+  # Solutions
+  # ──────────────────────────────────────────────────────────────
+  /api/v1/registry/teams/{teamId}/solutions:
+    post:
+      tags:
+        - Solutions
+      summary: Create a new solution
+      operationId: createSolution
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSolutionRequest"
+      responses:
+        "201":
+          description: Solution created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolutionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    get:
+      tags:
+        - Solutions
+      summary: List solutions for a team
+      operationId: getTeamSolutions
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/SolutionStatus"
+        - name: category
+          in: query
+          schema:
+            $ref: "#/components/schemas/SolutionCategory"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/size"
+        - $ref: "#/components/parameters/sort"
+      responses:
+        "200":
+          description: Paginated list of solutions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageResponseSolutionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/solutions/{solutionId}:
+    get:
+      tags:
+        - Solutions
+      summary: Get a solution by ID
+      operationId: getSolution
+      parameters:
+        - $ref: "#/components/parameters/solutionIdPath"
+      responses:
+        "200":
+          description: Solution details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolutionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      tags:
+        - Solutions
+      summary: Update a solution
+      operationId: updateSolution
+      parameters:
+        - $ref: "#/components/parameters/solutionIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSolutionRequest"
+      responses:
+        "200":
+          description: Solution updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolutionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags:
+        - Solutions
+      summary: Delete a solution
+      operationId: deleteSolution
+      parameters:
+        - $ref: "#/components/parameters/solutionIdPath"
+      responses:
+        "204":
+          description: Solution deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/solutions/{solutionId}/detail:
+    get:
+      tags:
+        - Solutions
+      summary: Get solution detail with members
+      operationId: getSolutionDetail
+      parameters:
+        - $ref: "#/components/parameters/solutionIdPath"
+      responses:
+        "200":
+          description: Solution detail with members
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolutionDetailResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/solutions/{solutionId}/members:
+    post:
+      tags:
+        - Solutions
+      summary: Add a service as a solution member
+      operationId: addSolutionMember
+      parameters:
+        - $ref: "#/components/parameters/solutionIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddSolutionMemberRequest"
+      responses:
+        "201":
+          description: Member added successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolutionMemberResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/solutions/{solutionId}/members/{serviceId}:
+    put:
+      tags:
+        - Solutions
+      summary: Update a solution member
+      operationId: updateSolutionMember
+      parameters:
+        - $ref: "#/components/parameters/solutionIdPath"
+        - $ref: "#/components/parameters/serviceIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSolutionMemberRequest"
+      responses:
+        "200":
+          description: Member updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolutionMemberResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags:
+        - Solutions
+      summary: Remove a service from a solution
+      operationId: removeSolutionMember
+      parameters:
+        - $ref: "#/components/parameters/solutionIdPath"
+        - $ref: "#/components/parameters/serviceIdPath"
+      responses:
+        "204":
+          description: Member removed successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/solutions/{solutionId}/members/reorder:
+    put:
+      tags:
+        - Solutions
+      summary: Reorder solution members
+      operationId: reorderSolutionMembers
+      parameters:
+        - $ref: "#/components/parameters/solutionIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        "200":
+          description: Members reordered successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SolutionMemberResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/solutions/{solutionId}/health:
+    get:
+      tags:
+        - Solutions
+      summary: Get aggregated health for a solution
+      operationId: getSolutionHealth
+      parameters:
+        - $ref: "#/components/parameters/solutionIdPath"
+      responses:
+        "200":
+          description: Solution health summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolutionHealthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ──────────────────────────────────────────────────────────────
+  # Ports
+  # ──────────────────────────────────────────────────────────────
+  /api/v1/registry/ports/auto-allocate:
+    post:
+      tags:
+        - Ports
+      summary: Auto-allocate a port from available ranges
+      operationId: autoAllocatePort
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AutoAllocatePortRequest"
+      responses:
+        "201":
+          description: Port auto-allocated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortAllocationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/ports/allocate:
+    post:
+      tags:
+        - Ports
+      summary: Allocate a specific port
+      operationId: allocatePort
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AllocatePortRequest"
+      responses:
+        "201":
+          description: Port allocated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortAllocationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/ports/{allocationId}:
+    delete:
+      tags:
+        - Ports
+      summary: Delete a port allocation
+      operationId: deletePortAllocation
+      parameters:
+        - name: allocationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Port allocation deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/services/{serviceId}/ports:
+    get:
+      tags:
+        - Ports
+      summary: Get port allocations for a service
+      operationId: getServicePorts
+      parameters:
+        - $ref: "#/components/parameters/serviceIdPath"
+        - name: environment
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of port allocations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortAllocationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/teams/{teamId}/ports:
+    get:
+      tags:
+        - Ports
+      summary: Get all port allocations for a team
+      operationId: getTeamPorts
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+        - name: environment
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of port allocations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortAllocationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/teams/{teamId}/ports/map:
+    get:
+      tags:
+        - Ports
+      summary: Get full port map for a team
+      operationId: getTeamPortMap
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+        - name: environment
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Port map with ranges and allocations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortMapResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/teams/{teamId}/ports/check:
+    get:
+      tags:
+        - Ports
+      summary: Check if a port is available
+      operationId: checkPort
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+        - name: portNumber
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: environment
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Port availability check result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortCheckResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/teams/{teamId}/ports/conflicts:
+    get:
+      tags:
+        - Ports
+      summary: Detect port conflicts for a team
+      operationId: getPortConflicts
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      responses:
+        "200":
+          description: List of port conflicts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortConflictResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/teams/{teamId}/ports/ranges:
+    get:
+      tags:
+        - Ports
+      summary: Get port ranges for a team
+      operationId: getPortRanges
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      responses:
+        "200":
+          description: List of port ranges
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortRangeResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/teams/{teamId}/ports/ranges/seed:
+    post:
+      tags:
+        - Ports
+      summary: Seed default port ranges for a team
+      operationId: seedPortRanges
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+        - name: environment
+          in: query
+          schema:
+            type: string
+            default: local
+      responses:
+        "200":
+          description: Seeded port ranges
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortRangeResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/ports/ranges/{rangeId}:
+    put:
+      tags:
+        - Ports
+      summary: Update a port range
+      operationId: updatePortRange
+      parameters:
+        - name: rangeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePortRangeRequest"
+      responses:
+        "200":
+          description: Port range updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortRangeResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ──────────────────────────────────────────────────────────────
+  # Dependencies
+  # ──────────────────────────────────────────────────────────────
+  /api/v1/registry/dependencies:
+    post:
+      tags:
+        - Dependencies
+      summary: Create a service dependency
+      operationId: createDependency
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDependencyRequest"
+      responses:
+        "201":
+          description: Dependency created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceDependencyResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/dependencies/{dependencyId}:
+    delete:
+      tags:
+        - Dependencies
+      summary: Delete a dependency
+      operationId: deleteDependency
+      parameters:
+        - name: dependencyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Dependency deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/teams/{teamId}/dependencies/graph:
+    get:
+      tags:
+        - Dependencies
+      summary: Get the full dependency graph for a team
+      operationId: getDependencyGraph
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      responses:
+        "200":
+          description: Dependency graph
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DependencyGraphResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/services/{serviceId}/dependencies/impact:
+    get:
+      tags:
+        - Dependencies
+      summary: Analyze impact of a service going down
+      operationId: getImpactAnalysis
+      parameters:
+        - $ref: "#/components/parameters/serviceIdPath"
+      responses:
+        "200":
+          description: Impact analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImpactAnalysisResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/teams/{teamId}/dependencies/startup-order:
+    get:
+      tags:
+        - Dependencies
+      summary: Get topologically sorted startup order
+      operationId: getStartupOrder
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      responses:
+        "200":
+          description: Startup order (topological sort)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DependencyNodeResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/teams/{teamId}/dependencies/cycles:
+    get:
+      tags:
+        - Dependencies
+      summary: Detect dependency cycles
+      operationId: detectCycles
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      responses:
+        "200":
+          description: List of service IDs involved in cycles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ──────────────────────────────────────────────────────────────
+  # Routes
+  # ──────────────────────────────────────────────────────────────
+  /api/v1/registry/routes:
+    post:
+      tags:
+        - Routes
+      summary: Register an API route
+      operationId: createRoute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRouteRequest"
+      responses:
+        "201":
+          description: Route created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiRouteResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/routes/{routeId}:
+    delete:
+      tags:
+        - Routes
+      summary: Delete a route
+      operationId: deleteRoute
+      parameters:
+        - name: routeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Route deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/services/{serviceId}/routes:
+    get:
+      tags:
+        - Routes
+      summary: Get routes for a service
+      operationId: getServiceRoutes
+      parameters:
+        - $ref: "#/components/parameters/serviceIdPath"
+      responses:
+        "200":
+          description: List of routes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiRouteResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/services/{gatewayServiceId}/routes/gateway:
+    get:
+      tags:
+        - Routes
+      summary: Get routes served through a gateway
+      operationId: getGatewayRoutes
+      parameters:
+        - name: gatewayServiceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: environment
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of gateway routes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiRouteResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/routes/check:
+    get:
+      tags:
+        - Routes
+      summary: Check if a route prefix is available
+      operationId: checkRoute
+      parameters:
+        - name: gatewayServiceId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: environment
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: routePrefix
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Route availability check result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RouteCheckResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ──────────────────────────────────────────────────────────────
+  # Config
+  # ──────────────────────────────────────────────────────────────
+  /api/v1/registry/services/{serviceId}/config/generate:
+    post:
+      tags:
+        - Config
+      summary: Generate a config template for a service
+      operationId: generateConfig
+      parameters:
+        - $ref: "#/components/parameters/serviceIdPath"
+        - name: type
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/ConfigTemplateType"
+        - name: environment
+          in: query
+          schema:
+            type: string
+            default: local
+      responses:
+        "200":
+          description: Generated config template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfigTemplateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/services/{serviceId}/config/generate-all:
+    post:
+      tags:
+        - Config
+      summary: Generate all config templates for a service
+      operationId: generateAllConfigs
+      parameters:
+        - $ref: "#/components/parameters/serviceIdPath"
+        - name: environment
+          in: query
+          schema:
+            type: string
+            default: local
+      responses:
+        "200":
+          description: Generated config templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConfigTemplateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/solutions/{solutionId}/config/docker-compose:
+    post:
+      tags:
+        - Config
+      summary: Generate Docker Compose for a solution
+      operationId: generateDockerCompose
+      parameters:
+        - $ref: "#/components/parameters/solutionIdPath"
+        - name: environment
+          in: query
+          schema:
+            type: string
+            default: local
+      responses:
+        "200":
+          description: Generated Docker Compose config template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfigTemplateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/services/{serviceId}/config:
+    get:
+      tags:
+        - Config
+      summary: Get a stored config template
+      operationId: getConfig
+      parameters:
+        - $ref: "#/components/parameters/serviceIdPath"
+        - name: type
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/ConfigTemplateType"
+        - name: environment
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Config template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfigTemplateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/services/{serviceId}/config/all:
+    get:
+      tags:
+        - Config
+      summary: Get all stored config templates for a service
+      operationId: getAllConfigs
+      parameters:
+        - $ref: "#/components/parameters/serviceIdPath"
+      responses:
+        "200":
+          description: List of config templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConfigTemplateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/config/{templateId}:
+    delete:
+      tags:
+        - Config
+      summary: Delete a config template
+      operationId: deleteConfig
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Config template deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ──────────────────────────────────────────────────────────────
+  # Health Management
+  # ──────────────────────────────────────────────────────────────
+  /api/v1/registry/teams/{teamId}/health/summary:
+    get:
+      tags:
+        - Health Management
+      summary: Get team health summary
+      operationId: getTeamHealthSummary
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      responses:
+        "200":
+          description: Team health summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamHealthSummaryResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/teams/{teamId}/health/check:
+    post:
+      tags:
+        - Health Management
+      summary: Trigger health check for all team services
+      operationId: triggerTeamHealthCheck
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      responses:
+        "200":
+          description: Team health summary after check
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamHealthSummaryResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/teams/{teamId}/health/unhealthy:
+    get:
+      tags:
+        - Health Management
+      summary: Get unhealthy services for a team
+      operationId: getUnhealthyServices
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      responses:
+        "200":
+          description: List of unhealthy services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceHealthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/teams/{teamId}/health/never-checked:
+    get:
+      tags:
+        - Health Management
+      summary: Get services that have never been health-checked
+      operationId: getNeverCheckedServices
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      responses:
+        "200":
+          description: List of never-checked services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceHealthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/solutions/{solutionId}/health/check:
+    post:
+      tags:
+        - Health Management
+      summary: Trigger health check for a solution's services
+      operationId: triggerSolutionHealthCheck
+      parameters:
+        - $ref: "#/components/parameters/solutionIdPath"
+      responses:
+        "200":
+          description: Solution health after check
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolutionHealthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/services/{serviceId}/health/cached:
+    get:
+      tags:
+        - Health Management
+      summary: Get cached health status for a service
+      operationId: getCachedServiceHealth
+      parameters:
+        - $ref: "#/components/parameters/serviceIdPath"
+      responses:
+        "200":
+          description: Cached service health
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceHealthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ──────────────────────────────────────────────────────────────
+  # Infra Resources
+  # ──────────────────────────────────────────────────────────────
+  /api/v1/registry/teams/{teamId}/infra-resources:
+    post:
+      tags:
+        - InfraResources
+      summary: Create an infrastructure resource
+      operationId: createInfraResource
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInfraResourceRequest"
+      responses:
+        "201":
+          description: Infra resource created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfraResourceResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    get:
+      tags:
+        - InfraResources
+      summary: List infra resources for a team
+      operationId: getTeamInfraResources
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+        - name: type
+          in: query
+          schema:
+            $ref: "#/components/schemas/InfraResourceType"
+        - name: environment
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Paginated list of infra resources
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageResponseInfraResourceResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/infra-resources/{resourceId}:
+    put:
+      tags:
+        - InfraResources
+      summary: Update an infra resource
+      operationId: updateInfraResource
+      parameters:
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInfraResourceRequest"
+      responses:
+        "200":
+          description: Infra resource updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfraResourceResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags:
+        - InfraResources
+      summary: Delete an infra resource
+      operationId: deleteInfraResource
+      parameters:
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Infra resource deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/services/{serviceId}/infra-resources:
+    get:
+      tags:
+        - InfraResources
+      summary: Get infra resources for a service
+      operationId: getServiceInfraResources
+      parameters:
+        - $ref: "#/components/parameters/serviceIdPath"
+      responses:
+        "200":
+          description: List of infra resources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InfraResourceResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/teams/{teamId}/infra-resources/orphans:
+    get:
+      tags:
+        - InfraResources
+      summary: Get orphaned infra resources (no service assigned)
+      operationId: getOrphanedInfraResources
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      responses:
+        "200":
+          description: List of orphaned infra resources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InfraResourceResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/infra-resources/{resourceId}/reassign:
+    patch:
+      tags:
+        - InfraResources
+      summary: Reassign an infra resource to a different service
+      operationId: reassignInfraResource
+      parameters:
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: newServiceId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Infra resource reassigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfraResourceResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/infra-resources/{resourceId}/orphan:
+    patch:
+      tags:
+        - InfraResources
+      summary: Orphan an infra resource (remove service assignment)
+      operationId: orphanInfraResource
+      parameters:
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Infra resource orphaned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfraResourceResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ──────────────────────────────────────────────────────────────
+  # Topology
+  # ──────────────────────────────────────────────────────────────
+  /api/v1/registry/teams/{teamId}/topology:
+    get:
+      tags:
+        - Topology
+      summary: Get full team topology
+      operationId: getTeamTopology
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      responses:
+        "200":
+          description: Full topology view
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopologyResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/solutions/{solutionId}/topology:
+    get:
+      tags:
+        - Topology
+      summary: Get topology for a solution
+      operationId: getSolutionTopology
+      parameters:
+        - $ref: "#/components/parameters/solutionIdPath"
+      responses:
+        "200":
+          description: Solution topology view
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopologyResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/services/{serviceId}/topology/neighborhood:
+    get:
+      tags:
+        - Topology
+      summary: Get neighborhood topology around a service
+      operationId: getServiceNeighborhood
+      parameters:
+        - $ref: "#/components/parameters/serviceIdPath"
+        - name: depth
+          in: query
+          schema:
+            type: integer
+            default: 1
+      responses:
+        "200":
+          description: Neighborhood topology
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopologyResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/teams/{teamId}/topology/stats:
+    get:
+      tags:
+        - Topology
+      summary: Get topology statistics for a team
+      operationId: getTopologyStats
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      responses:
+        "200":
+          description: Topology statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopologyStatsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ──────────────────────────────────────────────────────────────
+  # Workstations (Profiles)
+  # ──────────────────────────────────────────────────────────────
+  /api/v1/registry/teams/{teamId}/workstations:
+    post:
+      tags:
+        - Profiles
+      summary: Create a workstation profile
+      operationId: createWorkstationProfile
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkstationProfileRequest"
+      responses:
+        "201":
+          description: Workstation profile created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkstationProfileResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    get:
+      tags:
+        - Profiles
+      summary: List workstation profiles for a team
+      operationId: getTeamWorkstationProfiles
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      responses:
+        "200":
+          description: List of workstation profiles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkstationProfileResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/workstations/{profileId}:
+    get:
+      tags:
+        - Profiles
+      summary: Get a workstation profile by ID
+      operationId: getWorkstationProfile
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Workstation profile details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkstationProfileResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      tags:
+        - Profiles
+      summary: Update a workstation profile
+      operationId: updateWorkstationProfile
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWorkstationProfileRequest"
+      responses:
+        "200":
+          description: Workstation profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkstationProfileResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags:
+        - Profiles
+      summary: Delete a workstation profile
+      operationId: deleteWorkstationProfile
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Workstation profile deleted successfully
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/teams/{teamId}/workstations/default:
+    get:
+      tags:
+        - Profiles
+      summary: Get the default workstation profile for a team
+      operationId: getDefaultWorkstationProfile
+      parameters:
+        - $ref: "#/components/parameters/teamIdPath"
+      responses:
+        "200":
+          description: Default workstation profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkstationProfileResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/workstations/{profileId}/set-default:
+    patch:
+      tags:
+        - Profiles
+      summary: Set a workstation profile as the default
+      operationId: setDefaultWorkstationProfile
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Profile set as default
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkstationProfileResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/solutions/{solutionId}/workstations/from-solution:
+    post:
+      tags:
+        - Profiles
+      summary: Create a workstation profile from a solution
+      operationId: createWorkstationFromSolution
+      parameters:
+        - $ref: "#/components/parameters/solutionIdPath"
+        - name: teamId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: Workstation profile created from solution
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkstationProfileResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/registry/workstations/{profileId}/refresh-startup-order:
+    post:
+      tags:
+        - Profiles
+      summary: Refresh startup order based on dependency graph
+      operationId: refreshStartupOrder
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Startup order refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkstationProfileResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+# ════════════════════════════════════════════════════════════════
+# Components
+# ════════════════════════════════════════════════════════════════
+components:
+  # ──────────────────────────────────────────────────────────────
+  # Security Schemes
+  # ──────────────────────────────────────────────────────────────
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  # ──────────────────────────────────────────────────────────────
+  # Reusable Parameters
+  # ──────────────────────────────────────────────────────────────
+  parameters:
+    teamIdPath:
+      name: teamId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    serviceIdPath:
+      name: serviceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    solutionIdPath:
+      name: solutionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 0
+
+    size:
+      name: size
+      in: query
+      schema:
+        type: integer
+        default: 20
+
+    sort:
+      name: sort
+      in: query
+      schema:
+        type: string
+
+  # ──────────────────────────────────────────────────────────────
+  # Reusable Responses
+  # ──────────────────────────────────────────────────────────────
+  responses:
+    BadRequest:
+      description: Validation failure
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    Unauthorized:
+      description: Missing or invalid JWT
+
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: integer
+                example: 429
+              message:
+                type: string
+                example: "Rate limit exceeded. Try again later."
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  # ──────────────────────────────────────────────────────────────
+  # Schemas
+  # ──────────────────────────────────────────────────────────────
+  schemas:
+    # ── Enums ──────────────────────────────────────────────────
+    ServiceType:
+      type: string
+      enum:
+        - SPRING_BOOT_API
+        - FLUTTER_WEB
+        - FLUTTER_DESKTOP
+        - FLUTTER_MOBILE
+        - REACT_SPA
+        - VUE_SPA
+        - NEXT_JS
+        - EXPRESS_API
+        - FASTAPI
+        - DOTNET_API
+        - GO_API
+        - LIBRARY
+        - WORKER
+        - GATEWAY
+        - DATABASE_SERVICE
+        - MESSAGE_BROKER
+        - CACHE_SERVICE
+        - MCP_SERVER
+        - CLI_TOOL
+        - OTHER
+
+    ServiceStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - INACTIVE
+        - DEPRECATED
+        - ARCHIVED
+
+    HealthStatus:
+      type: string
+      enum:
+        - UP
+        - DOWN
+        - DEGRADED
+        - UNKNOWN
+
+    SolutionCategory:
+      type: string
+      enum:
+        - PLATFORM
+        - APPLICATION
+        - LIBRARY_SUITE
+        - INFRASTRUCTURE
+        - TOOLING
+        - OTHER
+
+    SolutionStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - IN_DEVELOPMENT
+        - DEPRECATED
+        - ARCHIVED
+
+    SolutionMemberRole:
+      type: string
+      enum:
+        - CORE
+        - SUPPORTING
+        - INFRASTRUCTURE
+        - EXTERNAL_DEPENDENCY
+
+    PortType:
+      type: string
+      enum:
+        - HTTP_API
+        - FRONTEND_DEV
+        - DATABASE
+        - REDIS
+        - KAFKA
+        - KAFKA_INTERNAL
+        - ZOOKEEPER
+        - GRPC
+        - WEBSOCKET
+        - DEBUG
+        - ACTUATOR
+        - CUSTOM
+
+    DependencyType:
+      type: string
+      enum:
+        - HTTP_REST
+        - GRPC
+        - KAFKA_TOPIC
+        - DATABASE_SHARED
+        - REDIS_SHARED
+        - LIBRARY
+        - GATEWAY_ROUTE
+        - WEBSOCKET
+        - FILE_SYSTEM
+        - OTHER
+
+    InfraResourceType:
+      type: string
+      enum:
+        - S3_BUCKET
+        - SQS_QUEUE
+        - SNS_TOPIC
+        - CLOUDWATCH_LOG_GROUP
+        - IAM_ROLE
+        - SECRETS_MANAGER_PATH
+        - SSM_PARAMETER
+        - RDS_INSTANCE
+        - ELASTICACHE_CLUSTER
+        - ECR_REPOSITORY
+        - CLOUD_MAP_NAMESPACE
+        - ROUTE53_RECORD
+        - ACM_CERTIFICATE
+        - ALB_TARGET_GROUP
+        - ECS_SERVICE
+        - LAMBDA_FUNCTION
+        - DYNAMODB_TABLE
+        - DOCKER_NETWORK
+        - DOCKER_VOLUME
+        - OTHER
+
+    ConfigTemplateType:
+      type: string
+      enum:
+        - DOCKER_COMPOSE
+        - APPLICATION_YML
+        - APPLICATION_PROPERTIES
+        - ENV_FILE
+        - TERRAFORM_MODULE
+        - CLAUDE_CODE_HEADER
+        - CONVENTIONS_MD
+        - NGINX_CONF
+        - GITHUB_ACTIONS
+        - DOCKERFILE
+        - MAKEFILE
+        - README_SECTION
+
+    ConfigSource:
+      type: string
+      enum:
+        - AUTO_GENERATED
+        - MANUAL
+        - INHERITED
+        - REGISTRY_DERIVED
+
+    # ── Health Check ───────────────────────────────────────────
+    HealthCheckResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        service:
+          type: string
+        timestamp:
+          type: string
+
+    # ── Error ──────────────────────────────────────────────────
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+        message:
+          type: string
+
+    # ── Page Responses ─────────────────────────────────────────
+    PageResponseServiceRegistrationResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceRegistrationResponse"
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        isLast:
+          type: boolean
+
+    PageResponseSolutionResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/SolutionResponse"
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        isLast:
+          type: boolean
+
+    PageResponseInfraResourceResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/InfraResourceResponse"
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        isLast:
+          type: boolean
+
+    # ── Request DTOs ───────────────────────────────────────────
+    CreateServiceRequest:
+      type: object
+      required:
+        - teamId
+        - name
+        - serviceType
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 200
+        serviceType:
+          $ref: "#/components/schemas/ServiceType"
+        description:
+          type: string
+          maxLength: 2000
+        repoUrl:
+          type: string
+          maxLength: 500
+        repoFullName:
+          type: string
+          maxLength: 300
+        defaultBranch:
+          type: string
+          maxLength: 100
+        techStack:
+          type: string
+          maxLength: 500
+        healthCheckUrl:
+          type: string
+          maxLength: 500
+        healthCheckIntervalSeconds:
+          type: integer
+        environmentsJson:
+          type: string
+        metadataJson:
+          type: string
+
+    UpdateServiceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+        repoUrl:
+          type: string
+          maxLength: 500
+        repoFullName:
+          type: string
+          maxLength: 300
+        defaultBranch:
+          type: string
+          maxLength: 100
+        techStack:
+          type: string
+          maxLength: 500
+        healthCheckUrl:
+          type: string
+          maxLength: 500
+        healthCheckIntervalSeconds:
+          type: integer
+        environmentsJson:
+          type: string
+        metadataJson:
+          type: string
+
+    UpdateServiceStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: "#/components/schemas/ServiceStatus"
+
+    CloneServiceRequest:
+      type: object
+      required:
+        - newName
+      properties:
+        newName:
+          type: string
+          maxLength: 200
+        newSlug:
+          type: string
+          maxLength: 100
+
+    CreateSolutionRequest:
+      type: object
+      required:
+        - teamId
+        - name
+        - category
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+        category:
+          $ref: "#/components/schemas/SolutionCategory"
+        iconName:
+          type: string
+          maxLength: 50
+        colorHex:
+          type: string
+          maxLength: 7
+        ownerUserId:
+          type: string
+          format: uuid
+        repositoryUrl:
+          type: string
+          maxLength: 500
+        documentationUrl:
+          type: string
+          maxLength: 500
+        metadataJson:
+          type: string
+
+    UpdateSolutionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+        category:
+          $ref: "#/components/schemas/SolutionCategory"
+        status:
+          $ref: "#/components/schemas/SolutionStatus"
+        iconName:
+          type: string
+          maxLength: 50
+        colorHex:
+          type: string
+          maxLength: 7
+        ownerUserId:
+          type: string
+          format: uuid
+        repositoryUrl:
+          type: string
+          maxLength: 500
+        documentationUrl:
+          type: string
+          maxLength: 500
+        metadataJson:
+          type: string
+
+    AddSolutionMemberRequest:
+      type: object
+      required:
+        - serviceId
+        - role
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        role:
+          $ref: "#/components/schemas/SolutionMemberRole"
+        displayOrder:
+          type: integer
+        notes:
+          type: string
+          maxLength: 500
+
+    UpdateSolutionMemberRequest:
+      type: object
+      properties:
+        role:
+          $ref: "#/components/schemas/SolutionMemberRole"
+        displayOrder:
+          type: integer
+        notes:
+          type: string
+          maxLength: 500
+
+    AllocatePortRequest:
+      type: object
+      required:
+        - serviceId
+        - environment
+        - portType
+        - portNumber
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        environment:
+          type: string
+          maxLength: 50
+        portType:
+          $ref: "#/components/schemas/PortType"
+        portNumber:
+          type: integer
+        protocol:
+          type: string
+          maxLength: 10
+        description:
+          type: string
+          maxLength: 200
+
+    AutoAllocatePortRequest:
+      type: object
+      required:
+        - serviceId
+        - environment
+        - portType
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        environment:
+          type: string
+          maxLength: 50
+        portType:
+          $ref: "#/components/schemas/PortType"
+        description:
+          type: string
+          maxLength: 200
+
+    UpdatePortRangeRequest:
+      type: object
+      required:
+        - rangeStart
+        - rangeEnd
+      properties:
+        rangeStart:
+          type: integer
+        rangeEnd:
+          type: integer
+        description:
+          type: string
+          maxLength: 200
+
+    CreateDependencyRequest:
+      type: object
+      required:
+        - sourceServiceId
+        - targetServiceId
+        - dependencyType
+      properties:
+        sourceServiceId:
+          type: string
+          format: uuid
+        targetServiceId:
+          type: string
+          format: uuid
+        dependencyType:
+          $ref: "#/components/schemas/DependencyType"
+        description:
+          type: string
+          maxLength: 500
+        isRequired:
+          type: boolean
+        targetEndpoint:
+          type: string
+          maxLength: 500
+
+    CreateRouteRequest:
+      type: object
+      required:
+        - serviceId
+        - routePrefix
+        - environment
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        gatewayServiceId:
+          type: string
+          format: uuid
+        routePrefix:
+          type: string
+          maxLength: 200
+        httpMethods:
+          type: string
+          maxLength: 100
+        environment:
+          type: string
+          maxLength: 50
+        description:
+          type: string
+          maxLength: 500
+
+    CreateInfraResourceRequest:
+      type: object
+      required:
+        - teamId
+        - resourceType
+        - resourceName
+        - environment
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        resourceType:
+          $ref: "#/components/schemas/InfraResourceType"
+        resourceName:
+          type: string
+          maxLength: 300
+        environment:
+          type: string
+          maxLength: 50
+        region:
+          type: string
+          maxLength: 30
+        arnOrUrl:
+          type: string
+          maxLength: 500
+        metadataJson:
+          type: string
+        description:
+          type: string
+          maxLength: 500
+
+    UpdateInfraResourceRequest:
+      type: object
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        resourceName:
+          type: string
+          maxLength: 300
+        region:
+          type: string
+          maxLength: 30
+        arnOrUrl:
+          type: string
+          maxLength: 500
+        metadataJson:
+          type: string
+        description:
+          type: string
+          maxLength: 500
+
+    CreateWorkstationProfileRequest:
+      type: object
+      required:
+        - teamId
+        - name
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        solutionId:
+          type: string
+          format: uuid
+        serviceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        isDefault:
+          type: boolean
+
+    UpdateWorkstationProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        serviceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        isDefault:
+          type: boolean
+
+    # ── Response DTOs ──────────────────────────────────────────
+    ServiceRegistrationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        serviceType:
+          $ref: "#/components/schemas/ServiceType"
+        description:
+          type: string
+        repoUrl:
+          type: string
+        repoFullName:
+          type: string
+        defaultBranch:
+          type: string
+        techStack:
+          type: string
+        status:
+          $ref: "#/components/schemas/ServiceStatus"
+        healthCheckUrl:
+          type: string
+        healthCheckIntervalSeconds:
+          type: integer
+        lastHealthStatus:
+          $ref: "#/components/schemas/HealthStatus"
+        lastHealthCheckAt:
+          type: string
+          format: date-time
+        environmentsJson:
+          type: string
+        metadataJson:
+          type: string
+        createdByUserId:
+          type: string
+          format: uuid
+        portCount:
+          type: integer
+        dependencyCount:
+          type: integer
+        solutionCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ServiceIdentityResponse:
+      type: object
+      properties:
+        service:
+          $ref: "#/components/schemas/ServiceRegistrationResponse"
+        ports:
+          type: array
+          items:
+            $ref: "#/components/schemas/PortAllocationResponse"
+        upstreamDependencies:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceDependencyResponse"
+        downstreamDependencies:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceDependencyResponse"
+        routes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiRouteResponse"
+        infraResources:
+          type: array
+          items:
+            $ref: "#/components/schemas/InfraResourceResponse"
+        environmentConfigs:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnvironmentConfigResponse"
+
+    ServiceHealthResponse:
+      type: object
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        healthStatus:
+          $ref: "#/components/schemas/HealthStatus"
+        lastCheckAt:
+          type: string
+          format: date-time
+        healthCheckUrl:
+          type: string
+        responseTimeMs:
+          type: integer
+        errorMessage:
+          type: string
+
+    SolutionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        category:
+          $ref: "#/components/schemas/SolutionCategory"
+        status:
+          $ref: "#/components/schemas/SolutionStatus"
+        iconName:
+          type: string
+        colorHex:
+          type: string
+        ownerUserId:
+          type: string
+          format: uuid
+        repositoryUrl:
+          type: string
+        documentationUrl:
+          type: string
+        metadataJson:
+          type: string
+        createdByUserId:
+          type: string
+          format: uuid
+        memberCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SolutionDetailResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        category:
+          $ref: "#/components/schemas/SolutionCategory"
+        status:
+          $ref: "#/components/schemas/SolutionStatus"
+        iconName:
+          type: string
+        colorHex:
+          type: string
+        ownerUserId:
+          type: string
+          format: uuid
+        repositoryUrl:
+          type: string
+        documentationUrl:
+          type: string
+        metadataJson:
+          type: string
+        createdByUserId:
+          type: string
+          format: uuid
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/SolutionMemberResponse"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SolutionMemberResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        solutionId:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        serviceName:
+          type: string
+        serviceSlug:
+          type: string
+        serviceType:
+          $ref: "#/components/schemas/ServiceType"
+        serviceStatus:
+          $ref: "#/components/schemas/ServiceStatus"
+        serviceHealthStatus:
+          $ref: "#/components/schemas/HealthStatus"
+        role:
+          $ref: "#/components/schemas/SolutionMemberRole"
+        displayOrder:
+          type: integer
+        notes:
+          type: string
+
+    SolutionHealthResponse:
+      type: object
+      properties:
+        solutionId:
+          type: string
+          format: uuid
+        solutionName:
+          type: string
+        totalServices:
+          type: integer
+        servicesUp:
+          type: integer
+        servicesDown:
+          type: integer
+        servicesDegraded:
+          type: integer
+        servicesUnknown:
+          type: integer
+        aggregatedHealth:
+          $ref: "#/components/schemas/HealthStatus"
+        serviceHealths:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceHealthResponse"
+
+    PortAllocationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        serviceName:
+          type: string
+        serviceSlug:
+          type: string
+        environment:
+          type: string
+        portType:
+          $ref: "#/components/schemas/PortType"
+        portNumber:
+          type: integer
+        protocol:
+          type: string
+        description:
+          type: string
+        isAutoAllocated:
+          type: boolean
+        allocatedByUserId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+
+    PortRangeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+        portType:
+          $ref: "#/components/schemas/PortType"
+        rangeStart:
+          type: integer
+        rangeEnd:
+          type: integer
+        environment:
+          type: string
+        description:
+          type: string
+
+    PortCheckResponse:
+      type: object
+      properties:
+        portNumber:
+          type: integer
+        environment:
+          type: string
+        available:
+          type: boolean
+        currentOwnerServiceId:
+          type: string
+          format: uuid
+        currentOwnerServiceName:
+          type: string
+        currentOwnerPortType:
+          $ref: "#/components/schemas/PortType"
+
+    PortConflictResponse:
+      type: object
+      properties:
+        portNumber:
+          type: integer
+        environment:
+          type: string
+        conflictingAllocations:
+          type: array
+          items:
+            $ref: "#/components/schemas/PortAllocationResponse"
+
+    PortMapResponse:
+      type: object
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        environment:
+          type: string
+        ranges:
+          type: array
+          items:
+            $ref: "#/components/schemas/PortRangeWithAllocationsResponse"
+        totalAllocated:
+          type: integer
+        totalAvailable:
+          type: integer
+
+    PortRangeWithAllocationsResponse:
+      type: object
+      properties:
+        portType:
+          $ref: "#/components/schemas/PortType"
+        rangeStart:
+          type: integer
+        rangeEnd:
+          type: integer
+        totalCapacity:
+          type: integer
+        allocated:
+          type: integer
+        available:
+          type: integer
+        allocations:
+          type: array
+          items:
+            $ref: "#/components/schemas/PortAllocationResponse"
+
+    ServiceDependencyResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sourceServiceId:
+          type: string
+          format: uuid
+        sourceServiceName:
+          type: string
+        sourceServiceSlug:
+          type: string
+        targetServiceId:
+          type: string
+          format: uuid
+        targetServiceName:
+          type: string
+        targetServiceSlug:
+          type: string
+        dependencyType:
+          $ref: "#/components/schemas/DependencyType"
+        description:
+          type: string
+        isRequired:
+          type: boolean
+        targetEndpoint:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    DependencyGraphResponse:
+      type: object
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/DependencyNodeResponse"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/DependencyEdgeResponse"
+
+    DependencyNodeResponse:
+      type: object
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        serviceType:
+          $ref: "#/components/schemas/ServiceType"
+        status:
+          $ref: "#/components/schemas/ServiceStatus"
+        healthStatus:
+          $ref: "#/components/schemas/HealthStatus"
+
+    DependencyEdgeResponse:
+      type: object
+      properties:
+        sourceServiceId:
+          type: string
+          format: uuid
+        targetServiceId:
+          type: string
+          format: uuid
+        dependencyType:
+          $ref: "#/components/schemas/DependencyType"
+        isRequired:
+          type: boolean
+        targetEndpoint:
+          type: string
+
+    ImpactAnalysisResponse:
+      type: object
+      properties:
+        sourceServiceId:
+          type: string
+          format: uuid
+        sourceServiceName:
+          type: string
+        impactedServices:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImpactedServiceResponse"
+        totalAffected:
+          type: integer
+
+    ImpactedServiceResponse:
+      type: object
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        serviceName:
+          type: string
+        serviceSlug:
+          type: string
+        depth:
+          type: integer
+        connectionType:
+          $ref: "#/components/schemas/DependencyType"
+        isRequired:
+          type: boolean
+
+    ApiRouteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        serviceName:
+          type: string
+        serviceSlug:
+          type: string
+        gatewayServiceId:
+          type: string
+          format: uuid
+        gatewayServiceName:
+          type: string
+        routePrefix:
+          type: string
+        httpMethods:
+          type: string
+        environment:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    RouteCheckResponse:
+      type: object
+      properties:
+        routePrefix:
+          type: string
+        environment:
+          type: string
+        available:
+          type: boolean
+        conflictingRoutes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiRouteResponse"
+
+    InfraResourceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        serviceName:
+          type: string
+        serviceSlug:
+          type: string
+        resourceType:
+          $ref: "#/components/schemas/InfraResourceType"
+        resourceName:
+          type: string
+        environment:
+          type: string
+        region:
+          type: string
+        arnOrUrl:
+          type: string
+        metadataJson:
+          type: string
+        description:
+          type: string
+        createdByUserId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ConfigTemplateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        serviceName:
+          type: string
+        templateType:
+          $ref: "#/components/schemas/ConfigTemplateType"
+        environment:
+          type: string
+        contentText:
+          type: string
+        isAutoGenerated:
+          type: boolean
+        generatedFrom:
+          type: string
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    EnvironmentConfigResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        environment:
+          type: string
+        configKey:
+          type: string
+        configValue:
+          type: string
+        configSource:
+          $ref: "#/components/schemas/ConfigSource"
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TopologyResponse:
+      type: object
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopologyNodeResponse"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/DependencyEdgeResponse"
+        solutionGroups:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopologySolutionGroup"
+        layers:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopologyLayerResponse"
+        stats:
+          $ref: "#/components/schemas/TopologyStatsResponse"
+
+    TopologyNodeResponse:
+      type: object
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        serviceType:
+          $ref: "#/components/schemas/ServiceType"
+        status:
+          $ref: "#/components/schemas/ServiceStatus"
+        healthStatus:
+          $ref: "#/components/schemas/HealthStatus"
+        portCount:
+          type: integer
+        upstreamDependencyCount:
+          type: integer
+        downstreamDependencyCount:
+          type: integer
+        solutionIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        layer:
+          type: string
+
+    TopologySolutionGroup:
+      type: object
+      properties:
+        solutionId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        status:
+          $ref: "#/components/schemas/SolutionStatus"
+        memberCount:
+          type: integer
+        serviceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    TopologyLayerResponse:
+      type: object
+      properties:
+        layer:
+          type: string
+        serviceCount:
+          type: integer
+        serviceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    TopologyStatsResponse:
+      type: object
+      properties:
+        totalServices:
+          type: integer
+        totalDependencies:
+          type: integer
+        totalSolutions:
+          type: integer
+        servicesWithNoDependencies:
+          type: integer
+        servicesWithNoConsumers:
+          type: integer
+        orphanedServices:
+          type: integer
+        maxDependencyDepth:
+          type: integer
+
+    TeamHealthSummaryResponse:
+      type: object
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        totalServices:
+          type: integer
+        activeServices:
+          type: integer
+        servicesUp:
+          type: integer
+        servicesDown:
+          type: integer
+        servicesDegraded:
+          type: integer
+        servicesUnknown:
+          type: integer
+        servicesNeverChecked:
+          type: integer
+        overallHealth:
+          $ref: "#/components/schemas/HealthStatus"
+        unhealthyServices:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceHealthResponse"
+        checkedAt:
+          type: string
+          format: date-time
+
+    WorkstationProfileResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        solutionId:
+          type: string
+          format: uuid
+        serviceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkstationServiceEntry"
+        startupOrder:
+          type: array
+          items:
+            type: string
+            format: uuid
+        isDefault:
+          type: boolean
+        createdByUserId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    WorkstationServiceEntry:
+      type: object
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        serviceType:
+          $ref: "#/components/schemas/ServiceType"
+        status:
+          $ref: "#/components/schemas/ServiceStatus"
+        healthStatus:
+          $ref: "#/components/schemas/HealthStatus"
+        startupPosition:
+          type: integer
